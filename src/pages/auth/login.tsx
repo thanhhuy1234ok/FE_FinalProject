@@ -32,7 +32,7 @@ export default function LoginPage() {
         localStorage.setItem("access_token", res.data.access_token);
 
         message.success("Đăng nhập tài khoản thành công!");
-        navigate(`/${res.data.user.role?.name?.toLowerCase()}`);
+        navigate(`/`);
         return;
       }
 

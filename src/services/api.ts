@@ -7,7 +7,7 @@ export const LogoutAPI = () => {
   return axios.post<IBackendRes<IFetchAccount>>(AUTH_API.LOGOUT);
 };
 
-export const AcountAPI = () => {
+export const getAccountAPI = () => {
   return axios.get<IBackendRes<IFetchAccount>>(AUTH_API.ACCOUNT);
 };
 

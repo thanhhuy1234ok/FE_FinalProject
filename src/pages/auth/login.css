@@ -1,4 +1,6 @@
-:root{
+/* ================== ONLY LOGIN SCOPE ================== */
+.login-wrap{
+  /* variables chỉ dùng trong login */
   --bg: #0b1020;
   --card-bg: rgba(255,255,255,.08);
   --card-border: rgba(255,255,255,.14);
@@ -6,25 +8,7 @@
   --muted: rgba(255,255,255,.65);
   --shadow: 0 30px 80px rgba(0,0,0,.45);
   --radius: 18px;
-}
 
-/* ===== RESET NHẸ ===== */
-*{ box-sizing: border-box; }
-html, body { height: 100%; }
-
-body{
-  margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-  background:
-    radial-gradient(1200px 800px at 20% 10%, rgba(86,157,255,.18), transparent 55%),
-    radial-gradient(1000px 700px at 90% 20%, rgba(196,86,255,.14), transparent 60%),
-    radial-gradient(900px 600px at 40% 90%, rgba(61,220,151,.10), transparent 55%),
-    var(--bg);
-  color: var(--text);
-}
-
-/* ===== CONTAINER CANH GIỮA ===== */
-.login-wrap{
   min-height: 100vh;
   position: relative;
   overflow: hidden;
@@ -33,10 +17,25 @@ body{
   place-items: center;
 
   padding: 32px;
+  color: var(--text);
+
+  /* nền chỉ cho login */
+  background:
+    radial-gradient(1200px 800px at 20% 10%, rgba(86,157,255,.18), transparent 55%),
+    radial-gradient(1000px 700px at 90% 20%, rgba(196,86,255,.14), transparent 60%),
+    radial-gradient(900px 600px at 40% 90%, rgba(61,220,151,.10), transparent 55%),
+    var(--bg);
+
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+}
+
+/* Reset nhẹ chỉ trong login */
+.login-wrap *{
+  box-sizing: border-box;
 }
 
 /* ===== HIỆU ỨNG GRID ===== */
-.bg-grid{
+.login-wrap .bg-grid{
   position: absolute;
   inset: -2px;
   background-image:
@@ -48,8 +47,8 @@ body{
   mask-image: radial-gradient(circle at 50% 40%, black, transparent 60%);
 }
 
-/* ===== ORB ÁNH SÁNG ===== */
-.bg-orb{
+/* ===== ORB ===== */
+.login-wrap .bg-orb{
   position: absolute;
   width: 520px;
   height: 520px;
@@ -59,31 +58,27 @@ body{
   pointer-events: none;
 }
 
-.orb-1{
+.login-wrap .orb-1{
   top: -180px;
   left: -180px;
   background: #5aa7ff;
 }
 
-.orb-2{
+.login-wrap .orb-2{
   bottom: -220px;
   right: -200px;
   background: #c25bff;
 }
 
 /* ===== SHELL ===== */
-.login-shell{
+.login-wrap .login-shell{
   width: min(520px, 100%);
   z-index: 1;
 }
 
-/* ===== CARD (GLASS) ===== */
-.login-card{
-  background: linear-gradient(
-    135deg,
-    rgba(255,255,255,.12),
-    rgba(255,255,255,.04)
-  );
+/* ===== CARD ===== */
+.login-wrap .login-card{
+  background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
   border: 1px solid var(--card-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
@@ -92,28 +87,27 @@ body{
 }
 
 /* ===== HEADER ===== */
-.login-head{
+.login-wrap .login-head{
   padding: 24px 24px 14px;
   border-bottom: 1px solid rgba(255,255,255,.12);
 }
 
-.login-head h2{
+.login-wrap .login-head h2{
   margin: 0;
   font-weight: 700;
   color: var(--text);
 }
 
-.login-head p{
+.login-wrap .login-head p{
   margin: 6px 0 0;
   color: var(--muted);
 }
 
 /* ===== FOOTER ===== */
-.login-footnote{
+.login-wrap .login-footnote{
   margin: 0;
   padding: 12px 24px 18px;
   text-align: center;
   font-size: 12px;
   color: rgba(255,255,255,.45);
 }
-

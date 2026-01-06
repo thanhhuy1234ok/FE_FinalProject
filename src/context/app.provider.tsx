@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CurrentAppContext } from "./app.context";
 import { PacmanLoader } from "react-spinners";
+import { getAccountAPI } from "@/services/api";
 
 type TProps = {
   children: React.ReactNode;
@@ -13,16 +14,27 @@ export const AppProvider = (props: TProps) => {
 
   useEffect(() => {
     const fetchAccount = async () => {
-      // const res = await getAccountAPI();
-      // if (res.data) {
-      //   setUser(res.data.user);
-      //   setIsAuthenticated(true);
-      // }
-      setIsAppLoading(false);
+      try {
+        const res = await getAccountAPI();
+
+        if (res?.data?.user) {
+          setUser(res.data.user);
+          setIsAuthenticated(true);
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      } catch {
+        setUser(null);
+        setIsAuthenticated(false);
+      } finally {
+        setIsAppLoading(false);
+      }
     };
 
     fetchAccount();
   }, []);
+
 
   return (
     <>
