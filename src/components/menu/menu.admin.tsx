@@ -1,8 +1,6 @@
 import { Link } from "react-router-dom";
 import { AppstoreOutlined, ExceptionOutlined } from "@ant-design/icons";
-import type { MenuItem } from "./menu";
-
-
+import type { MenuItem } from "@/helper/menu";
 
 export const adminMenuItems: MenuItem[] = [
     {

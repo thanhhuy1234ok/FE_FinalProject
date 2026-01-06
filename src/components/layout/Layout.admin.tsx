@@ -2,13 +2,13 @@ import React, { useMemo, useState } from "react";
 import { Layout, Menu } from "antd";
 import { HeartTwoTone } from "@ant-design/icons";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-
+import '@/styles/layout.admin.scss'
 import avatarFallback from "@/assets/avatar/avatar.jpg";
 import { LogoutAPI } from "@/services/api";
 import { useCurrentApp } from "@/context/use.curent";
 import { adminMenuItems } from "../menu/menu.admin";
 import AdminHeader from "../header/header.admin";
-import { findActiveKey } from "../menu/findActiveKey";
+import { findActiveKey } from "@/helper/findActiveKey";
 
 
 const { Content, Footer, Sider } = Layout;
@@ -45,20 +45,21 @@ const LayoutAdmin: React.FC = () => {
     if (isAuthenticated === false) return <Outlet />;
 
     return (
-        <Layout style={{ minHeight: "100vh" }} className="layout-admin">
+        <Layout style={{ minHeight: "100vh" }} className={`layout-admin`}>
             <Sider
                 theme="light"
+                className="admin-sider"
                 collapsible
                 collapsed={collapsed}
                 onCollapse={(value) => setCollapsed(value)}
                 width={300}
             >
-                <div style={{ height: 32, margin: 16, textAlign: "center" }}>Admin</div>
-
+                <div className="admin-brand">Admin</div>
                 <Menu selectedKeys={[activeMenu]} mode="inline" items={adminMenuItems} />
+
             </Sider>
 
-            <Layout>
+            <Layout className="admin-main">
                 <AdminHeader
                     collapsed={collapsed}
                     onToggleCollapsed={() => setCollapsed((prev) => !prev)}
@@ -68,17 +69,20 @@ const LayoutAdmin: React.FC = () => {
                     onLogout={handleLogout}
                 />
 
-                <Content style={{ padding: "15px" }}>
-                    <Outlet />
+                <Content className="admin-content">
+                    <div className="admin-page-card">
+                        <Outlet />
+                    </div>
                 </Content>
 
-                <Footer style={{ padding: 0, textAlign: "center" }}>
+                <Footer className="admin-footer">
                     © {new Date().getFullYear()} University Management System – Developed by School university with{" "}
                     <HeartTwoTone twoToneColor="#eb2f96" />
                 </Footer>
             </Layout>
         </Layout>
     );
+
 };
 
 export default LayoutAdmin;
