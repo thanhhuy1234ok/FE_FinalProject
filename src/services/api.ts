@@ -1,4 +1,4 @@
-import { AUTH_API } from "@/types/constans";
+import { AUTH_API, ROLES_API, USER_API } from "@/types/constans";
 import createInstanceAxios from "./axios.customize";
 
 const axios = createInstanceAxios(import.meta.env.VITE_BACKEND_URL);
@@ -17,3 +17,19 @@ export const LoginAPI = (username: string, password: string) => {
     password,
   });
 };
+
+export const getUserAPI = (query :string) =>{
+  return axios.get<IBackendRes<IModelPaginate<IUserTable>>>(USER_API.LIST(query))
+}
+
+export const createUserAPI = (data: Record<string, unknown>) =>{
+  return axios.post<IBackendRes<IUserTable>>(USER_API.CREATE,{...data})
+}
+
+export const getDetailUserAPI = (id : string) =>{
+  return axios.get<IBackendRes<IUserTable>>(USER_API.DETAIL(id))
+}
+
+export const getRolesAPI = (query : string) =>{
+  return axios.get<IBackendRes<IModelPaginate<IRolesTable>>>(ROLES_API.LIST(query))
+}

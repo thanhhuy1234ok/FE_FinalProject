@@ -2,24 +2,24 @@ import {
     ProTable,
     type ParamsType,
     type ProTableProps,
-} from '@ant-design/pro-components';
-import vi_VN from 'antd/locale/vi_VN';
-import { ConfigProvider } from 'antd';
-import type { Key } from 'react';
+} from "@ant-design/pro-components";
+import vi_VN from "antd/locale/vi_VN";
+import { ConfigProvider } from "antd";
+import type { Key } from "react";
 
 type DataTableProps<
-    T extends Record<string, unknown>,
+    T extends object,
     U extends ParamsType = ParamsType,
-    ValueType = 'text',
+    ValueType = "text",
 > = ProTableProps<T, U, ValueType> & {
     /** optional default id key */
     rowKey?: keyof T | ((record: T) => Key);
 };
 
 const DataTable = <
-    T extends Record<string, unknown>,
+    T extends object,
     U extends ParamsType = ParamsType,
-    ValueType = 'text',
+    ValueType = "text",
 >({
     columns,
     defaultData = [],
@@ -27,7 +27,7 @@ const DataTable = <
     postData,
     pagination,
     loading,
-    rowKey = 'id' as keyof T, // 👈 type-safe default
+    rowKey,
     scroll,
     params,
     request,
@@ -36,7 +36,7 @@ const DataTable = <
     toolBarRender,
     headerTitle,
     actionRef,
-    dateFormatter = 'string',
+    dateFormatter = "string",
     rowSelection,
 }: DataTableProps<T, U, ValueType>) => {
     return (
@@ -49,7 +49,7 @@ const DataTable = <
                 pagination={pagination}
                 bordered
                 loading={loading}
-                rowKey={rowKey}
+                rowKey={rowKey ?? "id"}
                 scroll={scroll}
                 params={params}
                 request={request}

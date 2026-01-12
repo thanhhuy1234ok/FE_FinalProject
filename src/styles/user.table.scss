@@ -1,0 +1,71 @@
+.user-page {
+  .ant-pro-table-search {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px 16px 10px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+    margin-bottom: 14px;
+
+    /* label nhỏ, gọn, sang */
+    .ant-form-item-label {
+      padding-bottom: 6px;
+    }
+    .ant-form-item-label > label {
+      font-weight: 600;
+      font-size: 13px;          // ✅ nhỏ lại
+      color: rgba(0, 0, 0, 0.65);
+    }
+
+    /* input full width & cao đều */
+    .ant-form-item-control,
+    .ant-form-item-control-input,
+    .ant-form-item-control-input-content {
+      width: 100%;
+    }
+
+    .ant-input,
+    .ant-input-affix-wrapper,
+    .ant-select-selector,
+    .ant-picker {
+      min-height: 42px;         // ✅ cao hơn chút cho “xịn”
+      border-radius: 12px;
+    }
+
+    .ant-input {
+      padding: 8px 12px;
+      line-height: 1.5;
+    }
+
+    .ant-input-affix-wrapper {
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+    }
+    .ant-input-affix-wrapper > input.ant-input {
+      padding: 8px 0;
+      height: auto;
+      min-height: unset;
+    }
+
+    /* spacing giữa các field */
+    .ant-form-item {
+      margin-bottom: 12px;
+    }
+
+    /* nút nằm phải, cùng chiều cao input */
+    .pro-search-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding-top: 22px; // ✅ canh ngang với input (do label nằm trên)
+    }
+
+    .pro-search-actions .ant-btn {
+      height: 42px;
+      border-radius: 12px;
+      padding: 0 14px;
+      font-weight: 600;
+    }
+  }
+}

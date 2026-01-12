@@ -1,0 +1,164 @@
+/* ===== Mask blur ===== */
+.user-modal-wrap {
+    .ant-modal-mask {
+        background: rgba(15, 23, 42, 0.55) !important;
+        backdrop-filter: blur(10px);
+    }
+}
+
+/* ===== Modal ===== */
+.user-modal {
+
+    /* ===== NỀN CHUNG: tránh bị chia khúc ===== */
+    .ant-modal-content {
+        border-radius: 22px;
+        overflow: hidden;
+        padding: 0;
+        background: linear-gradient(135deg, #f8fafc, #eef2ff) !important;
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.25);
+    }
+
+    /* TẤT CẢ phần con ăn chung nền */
+    .ant-modal-header,
+    .ant-modal-body,
+    .ant-modal-footer {
+        background: transparent !important;
+    }
+
+    /* Bỏ đường cắt */
+    .ant-modal-footer {
+        border-top: none !important;
+        box-shadow: none !important;
+        margin-top: 0 !important;
+    }
+
+    /* ===== HEADER ===== */
+    .ant-modal-header {
+        padding: 16px 20px;
+        background: linear-gradient(135deg, #6366f1, #4f46e5, #06b6d4) !important;
+        background-size: 200% 200%;
+        animation: headerGradient 6s ease infinite;
+    }
+
+    @keyframes headerGradient {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .ant-modal-title {
+        color: #fff;
+        font-weight: 800;
+        letter-spacing: 0.3px;
+    }
+
+    /* Close button */
+    .ant-modal-close {
+        background: rgba(0, 0, 0, 0.04) !important;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+
+    .ant-modal-close:hover {
+        background: rgba(0, 0, 0, 0.08) !important;
+        transform: scale(1.05);
+    }
+
+    .ant-modal-close-x {
+        color: #111 !important;
+        font-size: 18px;
+        font-weight: 800;
+    }
+
+    /* ===== BODY ===== */
+    .ant-modal-body {
+        padding: 20px;
+    }
+
+    /* ===== INPUT ===== */
+    .ant-input,
+    .ant-input-affix-wrapper,
+    .ant-select-selector {
+        // border-radius: 14px !important;
+        // height: 42px;
+        background: #fff !important;
+        border: 1px solid rgba(99, 102, 241, 0.25);
+        transition: all 0.2s ease;
+    }
+
+    .ant-input:focus,
+    .ant-input-affix-wrapper-focused,
+    .ant-select-focused .ant-select-selector {
+        border-color: #6366f1 !important;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18);
+        transform: translateY(-1px);
+    }
+
+    /* ===== FOOTER ===== */
+    .ant-modal-footer {
+        padding: 16px 20px 20px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    /* ===== BUTTON ===== */
+    .ant-btn {
+        height: 40px;
+        border-radius: 14px;
+        padding: 0 18px;
+        font-weight: 700;
+        transition: all 0.2s ease;
+    }
+
+    .ant-btn-default {
+        background: rgba(2, 6, 23, 0.05);
+        border: 1px solid rgba(2, 6, 23, 0.1);
+
+        &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+        }
+    }
+
+    /* ===== PRIMARY GRADIENT ===== */
+    .ant-btn-primary {
+        border: none;
+        color: #fff;
+        background: linear-gradient(135deg, #6366f1, #4f46e5, #06b6d4);
+        background-size: 200% 200%;
+        animation: btnGradient 5s ease infinite;
+        box-shadow: 0 14px 30px rgba(99, 102, 241, 0.45);
+
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 40px rgba(99, 102, 241, 0.55);
+        }
+
+        &:active {
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes btnGradient {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+}
