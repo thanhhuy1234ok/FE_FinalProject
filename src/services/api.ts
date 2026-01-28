@@ -1,4 +1,11 @@
-import { AUTH_API, ROLES_API, USER_API } from "@/types/constans";
+import {
+    AUTH_API,
+    CLASSES_API,
+    MAJORS_API,
+    ROLES_API,
+    USER_API,
+    YEARS_API,
+} from "@/types/constans";
 import createInstanceAxios from "./axios.customize";
 
 const axios = createInstanceAxios(import.meta.env.VITE_BACKEND_URL);
@@ -53,10 +60,25 @@ export const getRolesAPI = (query: string) => {
 //** Major API */
 export const getMajorsAPI = (query: string) => {
     return axios.get<IBackendRes<IModelPaginate<IMajorsTable>>>(
-        `/api/v1/majors?${query}`,
+        MAJORS_API.LIST(query),
     );
 };
 
 export const createMajorAPI = (data: Record<string, unknown>) => {
-    return axios.post<IBackendRes<IMajorsTable>>(`/api/v1/majors`, { ...data });
+    return axios.post<IBackendRes<IMajorsTable>>(MAJORS_API.CREATE, {
+        ...data,
+    });
+};
+
+//** Class API */
+export const getClassesAPI = (query: string) => {
+    return axios.get<IBackendRes<IModelPaginate<IClassesTable>>>(
+        CLASSES_API.LIST(query),
+    );
+};
+//** Year of Admission API */
+export const getYearsAPI = (query: string) => {
+    return axios.get<IBackendRes<IModelPaginate<IYearsTable>>>(
+        YEARS_API.LIST(query),
+    );
 };

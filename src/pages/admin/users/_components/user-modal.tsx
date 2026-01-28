@@ -40,6 +40,8 @@ const UserModal = (props: IProps) => {
         // valuesForm.role là object labelInValue
         const roleId = valuesForm?.role?.value;
         const majorId = valuesForm?.major?.value;
+        const classId = valuesForm?.AdminClass?.value;
+        const yearOfAdmissionId = valuesForm?.YearOfStudy?.value;
 
         const basePayload = {
             name: valuesForm.name,
@@ -64,12 +66,11 @@ const UserModal = (props: IProps) => {
             payload = {
                 ...basePayload,
                 major_id: majorId,
-                class_id: valuesForm.class_id,
-                yearOfAdmissionId: valuesForm.yearOfAdmissionId,
+                class_id: classId,
+                yearOfAdmissionId: yearOfAdmissionId,
             };
         }
-        console.log("pa;oad", payload);
-        return true;
+
         const res = await createUserAPI(payload);
         if (res && res.data) {
             message.success("update user thành công");
@@ -82,7 +83,8 @@ const UserModal = (props: IProps) => {
                 description: res.message,
             });
         }
-        // ✅ ModalForm yêu cầu return true để đóng modal
+        console.log("payload", payload);
+        return true;
     };
 
     return (
@@ -116,12 +118,35 @@ const UserModal = (props: IProps) => {
                             });
 
                             requestAnimationFrame(() => {
-                                form.setFieldsValue({
-                                    msgv: dataUpdate?.teacher?.msgv,
-                                    specialization:
-                                        dataUpdate?.teacher?.specialization,
-                                    degree: dataUpdate?.teacher?.degree,
-                                });
+                                if (dataUpdate?.role_id === 3) {
+                                    form.setFieldsValue({
+                                        major: {
+                                            value: dataUpdate?.student?.major
+                                                ?.id,
+                                            label: dataUpdate?.student?.major
+                                                ?.name,
+                                        },
+                                        AdminClass: {
+                                            value: dataUpdate?.student
+                                                ?.adminClass?.id,
+                                            label: dataUpdate?.student
+                                                ?.adminClass?.name,
+                                        },
+                                        YearOfStudy: {
+                                            value: dataUpdate?.student
+                                                ?.yearOfAdmission?.id,
+                                            label: dataUpdate?.student
+                                                ?.yearOfAdmission?.year,
+                                        },
+                                    });
+                                } else if (dataUpdate?.role_id === 2) {
+                                    form.setFieldsValue({
+                                        msgv: dataUpdate?.teacher?.msgv,
+                                        specialization:
+                                            dataUpdate?.teacher?.specialization,
+                                        degree: dataUpdate?.teacher?.degree,
+                                    });
+                                }
                             });
                         });
                     },
@@ -211,13 +236,6 @@ const UserModal = (props: IProps) => {
                                 labelInValue // ✅ QUAN TRỌNG
                                 placeholder="Chọn vai trò"
                                 fetchOptions={fetchRolesOptions}
-                                // onChange={(newValue: any) => {
-                                //     // nếu chỉ cho chọn 1:
-                                //     form.setFieldValue(
-                                //         "role",
-                                //         newValue ?? undefined,
-                                //     );
-                                // }}
                                 style={{ width: "100%" }}
                             />
                         </ProForm.Item>

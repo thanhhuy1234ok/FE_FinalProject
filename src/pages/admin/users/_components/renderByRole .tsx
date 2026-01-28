@@ -1,8 +1,23 @@
+import { DebounceSelect } from "@/components/share/debouce.select";
 import { ProFormText, ProForm } from "@ant-design/pro-components";
 import { Col } from "antd";
 import type { FormInstance } from "antd/es/form";
+import useUserHooks from "../_hooks/user.hook";
+import { useCallback } from "react";
 
 export const renderByRole = () => {
+    const { majorOptions, classOptions, yearOptions } = useUserHooks();
+    const fetchMajorOptions = useCallback(async () => {
+        return majorOptions ?? [];
+    }, [majorOptions]);
+
+    const fetchClassOptions = useCallback(async () => {
+        return classOptions ?? [];
+    }, [classOptions]);
+
+    const fetchYearOptions = useCallback(async () => {
+        return yearOptions ?? [];
+    }, [yearOptions]);
     return (
         <ProForm.Item shouldUpdate noStyle>
             {(formInstance: FormInstance) => {
@@ -49,17 +64,69 @@ export const renderByRole = () => {
                     return (
                         <>
                             <Col lg={9} md={9} sm={24} xs={24}>
-                                <ProFormText
-                                    label="Chuyên ngành"
+                                <ProForm.Item
                                     name="major"
+                                    label="Chuyên ngành"
                                     rules={[
                                         {
                                             required: true,
-                                            message: "Vui lòng không bỏ trống",
+                                            message:
+                                                "Vui lòng chọn chuyên ngành!",
                                         },
                                     ]}
-                                    placeholder="Nhập chuyên ngành"
-                                />
+                                >
+                                    <DebounceSelect
+                                        allowClear
+                                        showSearch
+                                        labelInValue // ✅ QUAN TRỌNG
+                                        placeholder="Chọn chuyên ngành"
+                                        fetchOptions={fetchMajorOptions}
+                                        style={{ width: "100%" }}
+                                    />
+                                </ProForm.Item>
+                            </Col>
+                            <Col lg={9} md={9} sm={24} xs={24}>
+                                <ProForm.Item
+                                    name="AdminClass"
+                                    label="Lớp học"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: "Vui lòng chọn lớp học!",
+                                        },
+                                    ]}
+                                >
+                                    <DebounceSelect
+                                        allowClear
+                                        showSearch
+                                        labelInValue // ✅ QUAN TRỌNG
+                                        placeholder="Chọn lớp học"
+                                        fetchOptions={fetchClassOptions}
+                                        style={{ width: "100%" }}
+                                    />
+                                </ProForm.Item>
+                            </Col>
+                            <Col lg={9} md={9} sm={24} xs={24}>
+                                <ProForm.Item
+                                    name="YearOfStudy"
+                                    label="Năm nhập học"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message:
+                                                "Vui lòng chọn năm nhập học!",
+                                        },
+                                    ]}
+                                >
+                                    <DebounceSelect
+                                        allowClear
+                                        showSearch
+                                        labelInValue // ✅ QUAN TRỌNG
+                                        placeholder="Chọn năm nhập học"
+                                        fetchOptions={fetchYearOptions}
+                                        style={{ width: "100%" }}
+                                    />
+                                </ProForm.Item>
                             </Col>
                         </>
                     );

@@ -35,3 +35,17 @@ export const MAJORS_API = {
     DETAIL: (id: string | number) => `${API_BASE}/majors/${id}`,
     DELETE: (id: string | number) => `${API_BASE}/majors/${id}`,
 };
+
+export const CLASSES_API = {
+    LIST: (query: string) => `${API_BASE}/admin-class?${query}`,
+    CREATE: `${API_BASE}/admin-class`,
+    DETAIL: (id: string | number) => `${API_BASE}/admin-class/${id}`,
+    DELETE: (id: string | number) => `${API_BASE}/admin-class/${id}`,
+};
+
+export const YEARS_API = {
+    LIST: (query: string) => `${API_BASE}/year-of-admission?${query}`,
+    CREATE: `${API_BASE}/year-of-admission`,
+    DETAIL: (id: string | number) => `${API_BASE}/year-of-admission/${id}`,
+    DELETE: (id: string | number) => `${API_BASE}/year-of-admission/${id}`,
+};

@@ -74,9 +74,9 @@ declare global {
     interface IStudentProfile {
         id: number;
         user_id: string;
-        major_id?: number;
-        class_id?: number;
-        yearOfAdmissionId?: number;
+        major?: IMajorsTable;
+        adminClass?: IClassesTable;
+        yearOfAdmission?: IYearsTable;
     }
 
     interface IRolesTable {
@@ -93,6 +93,31 @@ declare global {
         id: string | number;
         name: string;
         code: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date;
+    }
+
+    interface IClassesTable {
+        id: string | number;
+        name: string;
+        code: string;
+        capacity: number;
+        major_id: number;
+        yearOfAdmissionId: number;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date;
+    }
+
+    interface IYearsTable {
+        id: string | number;
+        year: string;
+        code: string;
+        expectedGraduationYear: number;
+        description?: string;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;

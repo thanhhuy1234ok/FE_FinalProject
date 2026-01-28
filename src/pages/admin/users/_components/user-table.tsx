@@ -60,7 +60,7 @@ const UserTable = () => {
                         {record.role?.name === "TEACHER" ? (
                             <Tag color="gold">Giáo viên</Tag>
                         ) : record.role?.name === "STUDENT" ? (
-                            <Tag color="green">Học sinh</Tag>
+                            <Tag color="blue">Học sinh</Tag>
                         ) : record.role?.name === "ADMIN" ? (
                             <Tag color="red">Quản trị viên</Tag>
                         ) : (
