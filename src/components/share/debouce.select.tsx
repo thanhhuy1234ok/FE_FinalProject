@@ -1,7 +1,13 @@
-import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
-import { Select, Spin } from 'antd';
-import type { SelectProps } from 'antd/es/select';
-import debounce from 'lodash/debounce';
+import React, {
+    useMemo,
+    useRef,
+    useState,
+    useEffect,
+    useCallback,
+} from "react";
+import { Select, Spin } from "antd";
+import type { SelectProps } from "antd/es/select";
+import debounce from "lodash/debounce";
 
 type OptionValue = string | number;
 
@@ -13,7 +19,7 @@ export type DebounceOption = {
 
 export interface DebounceSelectProps<
     OptionType extends DebounceOption = DebounceOption,
-> extends Omit<SelectProps<OptionType | OptionType[]>, 'options' | 'children'> {
+> extends Omit<SelectProps<OptionType | OptionType[]>, "options" | "children"> {
     fetchOptions: (search: string) => Promise<OptionType[]>;
     debounceTimeout?: number;
 }
@@ -46,10 +52,10 @@ export function DebounceSelect<
         [fetchOptions],
     );
 
-    const debounceFetcher = useMemo(() => debounce(loadOptions, debounceTimeout), [
-        loadOptions,
-        debounceTimeout,
-    ]);
+    const debounceFetcher = useMemo(
+        () => debounce(loadOptions, debounceTimeout),
+        [loadOptions, debounceTimeout],
+    );
 
     useEffect(() => {
         return () => {
@@ -60,7 +66,7 @@ export function DebounceSelect<
     const handleOnFocus = () => {
         // init data when focus if empty
         if (options.length > 0) return;
-        loadOptions('');
+        loadOptions("");
     };
 
     const handleOnBlur = () => {
@@ -69,6 +75,7 @@ export function DebounceSelect<
 
     return (
         <Select
+            {...props}
             labelInValue
             filterOption={false}
             onSearch={debounceFetcher}
@@ -76,8 +83,7 @@ export function DebounceSelect<
             options={options}
             onFocus={handleOnFocus}
             onBlur={handleOnBlur}
-            style={{ cursor: 'pointer' }}
-            {...props}
+            style={{ cursor: "pointer" }}
         />
     );
 }

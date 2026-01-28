@@ -6,7 +6,6 @@ import { Navigate, useRoutes, type RouteObject } from "react-router-dom";
 
 const LayoutSelector = () => {
     const { isAuthenticated, isAppLoading } = useCurrentApp();
-    console.log({ isAppLoading, isAuthenticated });
 
     // const roleTree = getRoutesByRole(user?.role?.name);
     const roleTree = getRoutesByRole('admin');

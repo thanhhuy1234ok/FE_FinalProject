@@ -56,13 +56,14 @@
 
     .ant-modal-title {
         color: #fff;
-        font-weight: 800;
+        font-weight: 600;
         letter-spacing: 0.3px;
     }
 
     /* Close button */
     .ant-modal-close {
-        background: rgba(0, 0, 0, 0.04) !important;
+        color: #d1c6c6;
+        background: rgba(255, 245, 245, 0.11) !important;
         border-radius: 10px;
         transition: all 0.2s ease;
     }
@@ -73,7 +74,7 @@
     }
 
     .ant-modal-close-x {
-        color: #111 !important;
+        color: #ffffff !important;
         font-size: 18px;
         font-weight: 800;
     }
@@ -87,8 +88,6 @@
     .ant-input,
     .ant-input-affix-wrapper,
     .ant-select-selector {
-        // border-radius: 14px !important;
-        // height: 42px;
         background: #fff !important;
         border: 1px solid rgba(99, 102, 241, 0.25);
         transition: all 0.2s ease;
@@ -100,6 +99,7 @@
         border-color: #6366f1 !important;
         box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18);
         transform: translateY(-1px);
+        transition: all 160ms ease;
     }
 
     /* ===== FOOTER ===== */

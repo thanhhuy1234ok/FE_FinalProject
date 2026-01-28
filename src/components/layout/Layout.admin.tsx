@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Layout, Menu } from "antd";
+import { Layout, Menu, message } from "antd";
 import { HeartTwoTone } from "@ant-design/icons";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import '@/styles/layout.admin.scss'
@@ -26,13 +26,14 @@ const LayoutAdmin: React.FC = () => {
 
     const handleLogout = async () => {
         const res = await LogoutAPI();
-        if (res?.data) {
-            setUser(null);
+        if (res && res.data) {
+            message.success('Đăng xuất thành công');
             setIsAuthenticated(false);
-            localStorage.removeItem("access_token");
-            navigate("/login");
+            setUser(null);
+            localStorage.removeItem('access_token');
+            navigate('/')
         }
-    };
+    }
 
     const handleProfile = () => {
         navigate("/admin/profile");
