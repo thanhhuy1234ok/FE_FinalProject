@@ -11,13 +11,15 @@ import UserModal from "./user-modal";
 import userHooks from "../_hooks/user.hook";
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { ROLE_MAP } from "@/types/constans";
+import UserProfileDrawer from "./user-detail";
 
 const { Text } = Typography;
 
 const UserTable = () => {
     const [openModal, setOpenModal] = useState<boolean>(false);
     const { roles, handleDeleteUser, isDeleteUser, tableRef } = userHooks();
-
+    const [openViewDetail, setOpenViewDetail] = useState<boolean>(false);
+    const [dataInit, setDataInit] = useState<IUserTable | null>(null);
     // const [openModalImport, setOpenModalImport] = useState(false);
     const [dataUpdate, setDataUpdate] = useState<IUserTable | null>(null);
     const [meta, setMeta] = useState({
@@ -42,6 +44,21 @@ const UserTable = () => {
         {
             title: "Name",
             dataIndex: "name",
+            render: (_text, record, _index, _action) => {
+                return (
+                    <span
+                        style={{
+                            cursor: "pointer",
+                        }}
+                        onClick={() => {
+                            setOpenViewDetail(true);
+                            setDataInit(record);
+                        }}
+                    >
+                        {record.name}
+                    </span>
+                );
+            },
             sorter: true, // ✅ sort.name
         },
         {
@@ -116,6 +133,7 @@ const UserTable = () => {
             title: "Actions",
             hideInSearch: true,
             width: 50,
+            key: "id",
             render: (_value, entity, _index, _action) => (
                 <Space>
                     {/* <Access
@@ -256,6 +274,12 @@ const UserTable = () => {
                 refreshTable={reloadTable}
                 setOpenModal={setOpenModal}
                 setDataUpdate={setDataUpdate}
+            />
+            <UserProfileDrawer
+                open={openViewDetail}
+                setOpen={setOpenViewDetail}
+                dataInit={dataInit}
+                setDataInit={setDataInit}
             />
         </div>
     );
