@@ -1,18 +1,14 @@
-import { App, Button, Form, Input, Typography } from "antd";
-import type { FormProps } from "antd";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import "./login.css";
-
-import { useCurrentApp } from "@/context/use.curent";
-import { LoginAPI } from "@/services/api";
+import { Form, Input, Button, App, type FormProps } from 'antd';
+import '@/styles/login.scss';
+import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { LoginAPI } from '@/services/api';
+import { useCurrentApp } from '@/context/use.curent';
 
 type LoginValues = {
   username: string; // email
   password: string;
 };
-
-
 export default function LoginPage() {
   const navigate = useNavigate();
   const { message, notification } = App.useApp();
@@ -42,10 +38,13 @@ export default function LoginPage() {
           res?.message && Array.isArray(res.message) ? res.message[0] : res?.message,
         duration: 5,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Vui lòng thử lại.";
+
       notification.error({
         message: "Đăng nhập thất bại",
-        description: err?.message ?? "Vui lòng thử lại.",
+        description: errorMessage,
         duration: 5,
       });
     } finally {
@@ -53,77 +52,69 @@ export default function LoginPage() {
     }
   };
 
+  const setChangePassword = (open: boolean) => {
+    console.log(open)
+    navigate('/auth/forgot-password');
+  }
   return (
-    <div className="login-wrap">
-      <div className="bg-orb orb-1" />
-      <div className="bg-orb orb-2" />
-      <div className="bg-grid" />
+    <div className="login-container">
+      <div className="right-section">
+        <div className="login-form">
+          <h2>Đăng nhập</h2>
 
-      <main className="login-shell" aria-label="Trang đăng nhập">
-        <section className="login-card">
-          <header className="login-head">
-            <Typography.Title level={2} className="login-title">
-              Welcome back School AG
-            </Typography.Title>
-            <Typography.Paragraph className="login-subtitle">
-              Vui lòng nhập thông tin để tiếp tục.
-            </Typography.Paragraph>
-          </header>
-
-          <Form<LoginValues>
-            name="login-form"
-            layout="vertical"
+          <Form
+            name="basic"
+            initialValues={{ remember: true }}
             onFinish={onFinish}
+            layout="vertical"
             autoComplete="off"
-            requiredMark
           >
             <Form.Item
-              label="Email"
+              label="Tài khoản"
               name="username"
-              rules={[
-                { required: true, message: "Email không được để trống!" },
-                { type: "email", message: "Email không đúng định dạng!" },
-              ]}
-
+              rules={[{ required: true, message: 'Vui lòng nhập tài khoản!' }]}
             >
-              <Input placeholder="admin@schoolag.com"
-                style={{
-                  height: '42px',
-                  backgroundColor: "rgba(0, 0, 0, .25)!important",
-                }} />
+              <Input placeholder="Nhập tài khoản" size="large" />
             </Form.Item>
 
             <Form.Item
               label="Mật khẩu"
               name="password"
-              rules={[{ required: true, message: "Mật khẩu không được để trống!" }]}
+              rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
             >
-              <Input.Password
-                style={{
-                  height: '42px',
-                  backgroundColor: "rgba(0, 0, 0, .25)!important",
-                }}
-                placeholder="Vui lòng nhập mật khẩu"
-              />
-
+              <Input.Password placeholder="Nhập mật khẩu" size="large" />
             </Form.Item>
 
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={isSubmit}
-              className="login-btn"
-              block
-            >
-              Đăng nhập
-            </Button>
+            <div className="forgot-password">
+              <Button type="link" onClick={() => setChangePassword(true)}>
+                Quên mật khẩu ?
+              </Button>
+            </div>
+
+            <Form.Item>
+              <Button
+                type="primary"
+                htmlType="submit"
+                block
+                className="login-btn"
+                loading={isSubmit}
+              >
+                Đăng Nhập
+              </Button>
+            </Form.Item>
           </Form>
 
-          <p className="login-footnote">
-            © {new Date().getFullYear()} SchoolAG • Secure Admin Access
+          <p className="support-text">
+            Vui lòng liên hệ{' '}
+            <a href="mailto:itsupport@congnghe.edu.com">
+              itsupport@congnghe.edu.com
+            </a>{' '}
+            nếu cần hỗ trợ.
           </p>
-        </section>
-      </main>
+        </div>
+      </div>
     </div>
   );
 }
+
+
