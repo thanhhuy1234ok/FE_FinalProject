@@ -18,6 +18,8 @@ export const AppProvider = (props: TProps) => {
       try {
         const res = await getAccountAPI();
 
+        console.log(res);
+
         if (res?.data?.user) {
           setUser(res.data.user);
           setIsAuthenticated(true);

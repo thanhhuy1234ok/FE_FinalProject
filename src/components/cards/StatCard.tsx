@@ -20,10 +20,10 @@ const StatCard = ({
   percent,
   positive,
   icon,
-  bgColor = "#1677ff",
+  bgColor = "#cadcf4",
 }: Props) => {
   return (
-    <Card className="stat-card">
+    <Card style={{ backgroundColor: `${bgColor}` }} className="stat-card">
       <Row justify="space-between" align="middle">
         <Col>
           <div className="stat-title">{title}</div>

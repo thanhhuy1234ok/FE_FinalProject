@@ -1,37 +1,16 @@
 import { createBrowserRouter } from "react-router-dom";
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import Dashboard from "../pages/dashboard/Dashboard";
-import ProtectedRoute from "./guards/ProtectedRoute";
-import { Role } from "../constants/role";
+import LoginPage from "@/pages/auth/login";
+import LayoutSelector from "@/components/layout/LayoutSelector";
 
 const router = createBrowserRouter([
-  {
+   { path: "/login", element: <LoginPage /> },
+ {
     path: "/",
-    element: <DashboardLayout />,
-    children: [
-      {
-        element: (
-          <ProtectedRoute
-            allowedRoles={[Role.ADMIN, Role.STUDENT, Role.USER]}
-          />
-        ),
-        children: [{ index: true, element: <Dashboard /> }],
-      },
-
-      {
-        element: <ProtectedRoute allowedRoles={[Role.ADMIN]} />,
-        children: [{ path: "billing", element: <div>Billing</div> }],
-      },
-
-      {
-        element: <ProtectedRoute allowedRoles={[Role.ADMIN, Role.STUDENT]} />,
-        children: [{ path: "tables", element: <div>Tables</div> }],
-      },
-    ],
+    element: <LayoutSelector />,
   },
 
-  { path: "/sign-in", element: <div>Sign In</div> },
-  { path: "/403", element: <div>403 - Forbidden</div> },
+  { path: "*", element: <div>404 - Not found</div> },
+
 ]);
 
 export default router;

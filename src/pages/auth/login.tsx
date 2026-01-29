@@ -42,7 +42,7 @@ export default function LoginPage() {
           res?.message && Array.isArray(res.message) ? res.message[0] : res?.message,
         duration: 5,
       });
-    } catch (err: unknown) {
+    } catch (err: any) {
       notification.error({
         message: "Đăng nhập thất bại",
         description: err?.message ?? "Vui lòng thử lại.",

@@ -1,5 +1,6 @@
 import { createContext } from "react";
 import { Role } from "@/constants/role";
+
 export interface IAppContext {
   isAuthenticated: boolean;
   setIsAuthenticated: (v: boolean) => void;
