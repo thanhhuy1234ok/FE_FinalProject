@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { CurrentAppContext } from "./app.context";
 import { PacmanLoader } from "react-spinners";
 import { getAccountAPI } from "@/services/api";
+import type { Role } from "@/constants/role";
 
 type TProps = {
   children: React.ReactNode;
@@ -16,6 +17,8 @@ export const AppProvider = (props: TProps) => {
     const fetchAccount = async () => {
       try {
         const res = await getAccountAPI();
+
+        console.log(res);
 
         if (res?.data?.user) {
           setUser(res.data.user);
@@ -35,7 +38,7 @@ export const AppProvider = (props: TProps) => {
     fetchAccount();
   }, []);
 
-
+  const role = user?.role?.name ? (user.role.name as Role) : null;
   return (
     <>
       {isAppLoading === false ? (
@@ -43,6 +46,7 @@ export const AppProvider = (props: TProps) => {
           value={{
             isAuthenticated,
             user,
+            role,
             setIsAuthenticated,
             setUser,
             isAppLoading,
