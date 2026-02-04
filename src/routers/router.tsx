@@ -1,16 +1,19 @@
-import { createBrowserRouter } from "react-router-dom";
-import LoginPage from "@/pages/auth/login";
 import LayoutSelector from "@/components/layout/LayoutSelector";
+import LoginPage from "@/pages/auth/login";
+import { createBrowserRouter } from "react-router-dom";
 
 const router = createBrowserRouter([
-   { path: "/login", element: <LoginPage /> },
- {
-    path: "/",
-    element: <LayoutSelector />,
+  // 🌐 Public route
+  {
+    path: "/login",
+    element: <LoginPage />,
   },
 
-  { path: "*", element: <div>404 - Not found</div> },
-
+  // 🔐 Protected routes (theo role)
+  {
+    path: "/*",
+    element: <LayoutSelector />,
+  },
 ]);
 
 export default router;

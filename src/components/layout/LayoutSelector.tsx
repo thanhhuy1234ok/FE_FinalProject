@@ -1,22 +1,40 @@
-import { Navigate } from "react-router-dom";
 import { useCurrentApp } from "@/context/use.curent";
+import NotFound from "@/pages/not-found/403";
+import { getRoutesByRole } from "@/helper/route.helpers";
+import { Navigate, useRoutes, type RouteObject } from "react-router-dom";
 
-import LayoutAdmin from "./Layout.admin";
-import LayoutStudent from "./Layout.student";
-import LayoutTeacher from "./Layout.teacher";
 
 const LayoutSelector = () => {
-  const { role, isAuthenticated, isAppLoading } = useCurrentApp();
+    const { isAuthenticated, isAppLoading } = useCurrentApp();
 
-  if (isAppLoading) return null;
+    // const roleTree = getRoutesByRole(user?.role?.name);
+    const roleTree = getRoutesByRole('admin');
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+    // ✅ Không return trước useRoutes (tránh lỗi Rules of Hooks)
+    const routes: RouteObject[] = [
+        ...(isAppLoading
+            ? [
+                {
+                    path: "*",
+                    element: null, // AppProvider đã có loader
+                },
+            ]
+            : []),
 
-  if (role === "ADMIN") return <LayoutAdmin />;
-  if (role === "STUDENT") return <LayoutStudent />;
+        ...(!isAppLoading && !isAuthenticated
+            ? [
+                {
+                    path: "*",
+                    element: <Navigate to="/login" replace />,
+                },
+            ]
+            : [
+                roleTree,
+                { path: "*", element: <NotFound /> },
+            ]),
+    ];
 
-  return <LayoutTeacher />;
-
+    return useRoutes(routes);
 };
 
 export default LayoutSelector;
