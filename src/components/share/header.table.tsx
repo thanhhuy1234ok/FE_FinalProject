@@ -1,9 +1,13 @@
-import { ExportOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+    CloudUploadOutlined,
+    ExportOutlined,
+    PlusOutlined,
+} from "@ant-design/icons";
 import ButtonComponents from "./button";
 
 interface IProps {
     handleExportData: () => void;
-    setOpenModalImport?: (v: boolean) => void;
+    setOpenModalImport: (v: boolean) => void;
     setOpenModal: (v: boolean) => void;
 
     showExport?: boolean;
@@ -13,15 +17,15 @@ interface IProps {
 
 const RenderHeaderTable = ({
     handleExportData,
-    // setOpenModalImport,
+    setOpenModalImport,
     setOpenModal,
     showExport = true,
-    // showImport = true,
+    showImport = true,
     showAdd = true,
 }: IProps) => {
     return (
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ display: 'flex', gap: 15 }}>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span style={{ display: "flex", gap: 15 }}>
                 {showExport && (
                     <ButtonComponents
                         icon={<ExportOutlined />}
@@ -31,14 +35,14 @@ const RenderHeaderTable = ({
                     />
                 )}
 
-                {/* {showImport && (
+                {showImport && (
                     <ButtonComponents
                         icon={<CloudUploadOutlined />}
                         onClick={() => setOpenModalImport(true)}
                         title="Import"
                         isVisible
                     />
-                )} */}
+                )}
 
                 {showAdd && (
                     <ButtonComponents

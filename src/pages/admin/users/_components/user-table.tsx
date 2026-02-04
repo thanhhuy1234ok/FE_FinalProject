@@ -1,26 +1,42 @@
 import DataTable from "@/components/share/data.table";
 import { buildQuery } from "@/helper/buildQuery";
-import { getUserAPI } from "@/services/api";
+import { callBulkCreateUser, getUserAPI } from "@/services/api";
 import { type ProColumns } from "@ant-design/pro-components";
-import { Badge, Popconfirm, Space, Tag, Tooltip, Typography } from "antd";
+import {
+    Badge,
+    Dropdown,
+    Popconfirm,
+    Space,
+    Tag,
+    Tooltip,
+    Typography,
+} from "antd";
 import { useState } from "react";
 import "@/styles/user.table.scss";
 import dayjs from "dayjs";
 import RenderHeaderTable from "@/components/share/header.table";
 import UserModal from "./user-modal";
 import userHooks from "../_hooks/user.hook";
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import {
+    DeleteOutlined,
+    EditOutlined,
+    EllipsisOutlined,
+} from "@ant-design/icons";
 import { ROLE_MAP } from "@/types/constans";
 import UserProfileDrawer from "./user-detail";
+import ImportExcelData from "@/components/share/data-import/import.data";
+import templateFile from "@/components/share/data-import/template.xlsx?url";
+import ButtonComponents from "@/components/share/button";
+import { useNavigate } from "react-router-dom";
 
 const { Text } = Typography;
 
 const UserTable = () => {
     const [openModal, setOpenModal] = useState<boolean>(false);
-    const { roles, handleDeleteUser, isDeleteUser, tableRef } = userHooks();
+    const { roles, handleDeleteUser, tableRef } = userHooks();
     const [openViewDetail, setOpenViewDetail] = useState<boolean>(false);
     const [dataInit, setDataInit] = useState<IUserTable | null>(null);
-    // const [openModalImport, setOpenModalImport] = useState(false);
+    const [openModalImport, setOpenModalImport] = useState(false);
     const [dataUpdate, setDataUpdate] = useState<IUserTable | null>(null);
     const [meta, setMeta] = useState({
         current: 1,
@@ -28,7 +44,7 @@ const UserTable = () => {
         pages: 0,
         total: 0,
     });
-
+    const navigate = useNavigate();
     const handleExportData = () => {
         window.alert("me");
     };
@@ -130,78 +146,97 @@ const UserTable = () => {
             hideInSearch: true,
         },
         {
+            title: "Detail",
+            hideInSearch: true,
+            align: "center",
+            render: (_value, entity) => {
+                return (
+                    <>
+                        <ButtonComponents
+                            title="Xem chi tiết sinh viên"
+                            key={entity.id}
+                            onClick={() => navigate(`${entity.id}`)}
+                        />
+                    </>
+                );
+            },
+        },
+        {
             title: "Actions",
             hideInSearch: true,
             width: 50,
             key: "id",
-            render: (_value, entity, _index, _action) => (
-                <Space>
-                    {/* <Access
-                        permission={ALL_PERMISSIONS.ROLES.UPDATE}
-                        hideChildren
-                    >
-                        
-                    </Access> */}
-                    <EditOutlined
-                        style={{
-                            color: entity.isActive ? "#ffa500" : "#bfbfbf",
-                            cursor: entity.isActive ? "pointer" : "not-allowed",
-                            opacity: entity.isActive ? 1 : 0.6,
-                        }}
-                        type=""
-                        onClick={async () => {
-                            if (entity.isActive) {
-                                setDataUpdate(entity);
-                                setOpenModal(true);
-                            }
-                            return;
-                        }}
-                    />
-                    {/* <Access
-                        permission={ALL_PERMISSIONS.ROLES.DELETE}
-                        hideChildren
-                    >
-                        
-                    </Access> */}
-                    {entity.isActive ? (
-                        <Popconfirm
-                            placement="leftTop"
-                            title={"Xác nhận xóa user"}
-                            description={"Bạn có chắc chắn muốn xóa user này ?"}
-                            onConfirm={() => handleDeleteUser(entity.id)}
-                            okText="Xác nhận"
-                            cancelText="Hủy"
-                            okButtonProps={{
-                                loading: isDeleteUser,
-                            }}
-                        >
-                            <span
+            align: "center", // ✅ canh giữa theo column
+            render: (_value, entity) => {
+                const menuItems = [
+                    {
+                        key: "edit",
+                        label: (
+                            <Space>
+                                <EditOutlined />
+                                Chỉnh sửa
+                            </Space>
+                        ),
+                        disabled: !entity.isActive,
+                        onClick: () => {
+                            setDataUpdate(entity);
+                            setOpenModal(true);
+                        },
+                    },
+                    {
+                        key: "delete",
+                        label: entity.isActive ? (
+                            <Popconfirm
+                                title={`Xác nhận xóa người dùng ${entity.email}`}
+                                onConfirm={() => handleDeleteUser(entity.id)}
+                                okText="Xác nhận"
+                                cancelText="Hủy"
+                            >
+                                <Space>
+                                    <DeleteOutlined
+                                        style={{ color: "#ff4d4f" }}
+                                    />
+                                    Xóa
+                                </Space>
+                            </Popconfirm>
+                        ) : (
+                            <Space
                                 style={{
-                                    cursor: "pointer",
-                                    margin: "0 10px",
+                                    color: "#bfbfbf",
+                                    cursor: "not-allowed",
                                 }}
                             >
-                                <DeleteOutlined
-                                    style={{
-                                        fontSize: 20,
-                                        color: "#ff4d4f",
-                                    }}
-                                />
-                            </span>
-                        </Popconfirm>
-                    ) : (
-                        <DeleteOutlined
-                            style={{
-                                fontSize: 20,
-                                color: "#bfbfbf",
-                                cursor: "not-allowed",
-                                opacity: 0.6,
-                                margin: "0 10px",
-                            }}
-                        />
-                    )}
-                </Space>
-            ),
+                                <DeleteOutlined />
+                                Xóa
+                            </Space>
+                        ),
+                        disabled: !entity.isActive,
+                    },
+                ];
+
+                return (
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "center", // ngang
+                            alignItems: "center", // dọc
+                            height: "100%",
+                        }}
+                    >
+                        <Dropdown
+                            menu={{ items: menuItems }}
+                            trigger={["click"]}
+                        >
+                            <EllipsisOutlined
+                                style={{
+                                    fontSize: 20,
+                                    cursor: "pointer",
+                                }}
+                            />
+                        </Dropdown>
+                    </div>
+                );
+            },
         },
     ];
 
@@ -253,7 +288,7 @@ const UserTable = () => {
                     <RenderHeaderTable
                         key="toolbar"
                         handleExportData={handleExportData}
-                        // setOpenModalImport={setOpenModalImport}
+                        setOpenModalImport={setOpenModalImport}
                         setOpenModal={setOpenModal}
                         showExport
                         showImport
@@ -280,6 +315,31 @@ const UserTable = () => {
                 setOpen={setOpenViewDetail}
                 dataInit={dataInit}
                 setDataInit={setDataInit}
+            />
+
+            <ImportExcelData
+                setOpenModalImport={setOpenModalImport}
+                openModalImport={openModalImport}
+                fetchData={reloadTable}
+                headers={[
+                    "Tên hiển thị",
+                    "Email",
+                    "Role",
+                    "Chuyên Ngành",
+                    "Năm nhập học",
+                    "Lớp",
+                ]}
+                dataMapping={[
+                    "name",
+                    "email",
+                    "role",
+                    "major",
+                    "yearOfAdmission",
+                    "class",
+                ]}
+                templateFileUrl={templateFile}
+                uploadTitle="Nhập dữ liệu vai trò"
+                apiFunction={callBulkCreateUser}
             />
         </div>
     );

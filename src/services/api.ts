@@ -50,6 +50,13 @@ export const updateUserAPI = (
     return axios.put<IBackendRes<IUserTable>>(USER_API.UPDATE(id), { ...data });
 };
 
+export const callBulkCreateUser = (user: IExcelData[]) => {
+    return axios.post<IBackendRes<IExcelData[]>>(
+        "/api/v1/users/bulk-create",
+        user,
+    );
+};
+
 //** Role API */
 export const getRolesAPI = (query: string) => {
     return axios.get<IBackendRes<IModelPaginate<IRolesTable>>>(

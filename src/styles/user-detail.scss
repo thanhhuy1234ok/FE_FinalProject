@@ -1,0 +1,12 @@
+.user-detail-page {
+    padding: 16px;
+
+    .ant-tabs-nav {
+        margin-bottom: 12px;
+    }
+
+    .ant-descriptions-item-label {
+        width: 180px;
+        color: rgba(255, 255, 255, 0.65); // nếu theme dark
+    }
+}

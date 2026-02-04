@@ -1,7 +1,9 @@
 import LayoutAdmin from "@/components/layout/Layout.admin";
 import Dashboard from "@/pages/admin/dashboard";
+import MajorManagerPage from "@/pages/admin/major";
 import RolesMangagerPage from "@/pages/admin/roles";
 import UserManagerPage from "@/pages/admin/users";
+import UserDetailPage from "@/pages/admin/users/_components/user-detail-v1";
 import type { RouteObject } from "react-router-dom";
 
 export const adminRoutes: RouteObject = {
@@ -10,16 +12,24 @@ export const adminRoutes: RouteObject = {
     children: [
         { index: true, element: <Dashboard /> },
         {
-            path: 'manage-user/users',
-            element: <UserManagerPage />
+            path: "manage-user/users",
+            element: <UserManagerPage />,
         },
         {
-            path: 'manage-user/roles',
-            element: <RolesMangagerPage />
+            path: "manage-user/users/:id",
+            element: <UserDetailPage />,
         },
         {
-            path: 'manage-curriculum/course',
-            element: <>roles</>
+            path: "manage-user/roles",
+            element: <RolesMangagerPage />,
         },
-    ]
-}
+        {
+            path: "manage-curriculum/course",
+            element: <MajorManagerPage />,
+        },
+        {
+            path: "manage-curriculum/major",
+            element: <> major</>,
+        },
+    ],
+};

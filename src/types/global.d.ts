@@ -31,6 +31,24 @@ declare global {
         key?: string;
     }
 
+    interface IDataImportProps {
+        setOpenModalImport: (open: boolean) => void;
+        openModalImport: boolean;
+        fetchData: () => void;
+        headers: string[];
+        dataMapping: string[];
+        templateFileUrl: string;
+        uploadTitle?: string;
+        apiFunction: (data: ExcelData[]) => Promise<any>;
+    }
+
+    interface IExcelData {
+        fullName: string;
+        email: string;
+        // phone: string;
+        password?: string;
+    }
+
     interface IUser {
         id: string | number;
         email: string;

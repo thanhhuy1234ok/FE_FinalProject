@@ -199,6 +199,7 @@ const UserModal = (props: IProps) => {
                                 },
                             ]}
                             placeholder="Nhập email"
+                            disabled={!!!dataUpdate}
                         />
                     </Col>
                     <Col lg={12} md={12} sm={24} xs={24}>
@@ -233,8 +234,9 @@ const UserModal = (props: IProps) => {
                             <DebounceSelect
                                 allowClear
                                 showSearch
-                                labelInValue // ✅ QUAN TRỌNG
+                                labelInValue
                                 placeholder="Chọn vai trò"
+                                disabled={!!dataUpdate}
                                 fetchOptions={fetchRolesOptions}
                                 style={{ width: "100%" }}
                             />
