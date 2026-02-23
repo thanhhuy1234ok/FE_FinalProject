@@ -49,3 +49,18 @@ export const YEARS_API = {
     DETAIL: (id: string | number) => `${API_BASE}/year-of-admission/${id}`,
     DELETE: (id: string | number) => `${API_BASE}/year-of-admission/${id}`,
 };
+
+export const CAPUS_BUILDING_ROOM_API = {
+    LIST_ROOM: (query: string) => `${API_BASE}/rooms?${query}`,
+    CREATE_ROOM: `${API_BASE}/rooms`,
+    PREVIEW_CODE_ROOM: (id: string | number, query: string) =>
+        `${API_BASE}/rooms/${id}/preview-code?${query}`,
+
+    LIST_CAMPUS: (query: string) => `${API_BASE}/campus?${query}`,
+    CREATE_CAMPUS: `${API_BASE}/campus`,
+    DETAIL_CAMPUS: (id: string | number) => `${API_BASE}/campus/${id}`,
+    DELETE_CAMPUS: (id: string | number) => `${API_BASE}/campus/${id}`,
+
+    CREATE_BUILDING: (CampusId: string | number) =>
+        `${API_BASE}/campus/${CampusId}/buildings`,
+};

@@ -141,6 +141,41 @@ declare global {
         updatedAt: Date;
         deletedAt: Date;
     }
+
+    interface IRoomsTable {
+        id: string | number;
+        name: string;
+        code: string;
+        building_id: number;
+        building: IBuildingTable;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date;
+    }
+
+    interface ICampusTable {
+        id: string | number;
+        name: string;
+        code: string;
+        address: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date;
+    }
+
+    interface IBuildingTable {
+        id: string | number;
+        name: string;
+        code: string;
+        campus_id: number;
+        campus: ICampusTable;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date;
+    }
 }
 
 export {};

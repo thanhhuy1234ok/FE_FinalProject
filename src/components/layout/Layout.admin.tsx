@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Layout, Menu, message } from "antd";
 import { HeartTwoTone } from "@ant-design/icons";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import '@/styles/layout.admin.scss'
+import "@/styles/layout.admin.scss";
 import avatarFallback from "@/assets/avatar/avatar.jpg";
 import { LogoutAPI } from "@/services/api";
 import { useCurrentApp } from "@/context/use.curent";
@@ -10,13 +10,13 @@ import { adminMenuItems } from "../menu/menu.admin";
 import AdminHeader from "../header/header.admin";
 import { findActiveKey } from "@/helper/findActiveKey";
 
-
 const { Content, Footer, Sider } = Layout;
 
 const LayoutAdmin: React.FC = () => {
     const [collapsed, setCollapsed] = useState(false);
 
-    const { user, setUser, setIsAuthenticated, isAuthenticated } = useCurrentApp();
+    const { user, setUser, setIsAuthenticated, isAuthenticated } =
+        useCurrentApp();
     const navigate = useNavigate();
     const { pathname } = useLocation();
 
@@ -27,13 +27,13 @@ const LayoutAdmin: React.FC = () => {
     const handleLogout = async () => {
         const res = await LogoutAPI();
         if (res && res.data) {
-            message.success('Đăng xuất thành công');
+            message.success("Đăng xuất thành công");
             setIsAuthenticated(false);
             setUser(null);
-            localStorage.removeItem('access_token');
-            navigate('/')
+            localStorage.removeItem("access_token");
+            navigate("/");
         }
-    }
+    };
 
     const handleProfile = () => {
         navigate("/admin/profile");
@@ -56,8 +56,11 @@ const LayoutAdmin: React.FC = () => {
                 width={300}
             >
                 <div className="admin-brand">Admin</div>
-                <Menu selectedKeys={[activeMenu]} mode="inline" items={adminMenuItems} />
-
+                <Menu
+                    selectedKeys={[activeMenu]}
+                    mode="inline"
+                    items={adminMenuItems}
+                />
             </Sider>
 
             <Layout className="admin-main">
@@ -77,13 +80,13 @@ const LayoutAdmin: React.FC = () => {
                 </Content>
 
                 <Footer className="admin-footer">
-                    © {new Date().getFullYear()} University Management System – Developed by School university with{" "}
+                    © {new Date().getFullYear()} University Management System –
+                    Developed by School university with{" "}
                     <HeartTwoTone twoToneColor="#eb2f96" />
                 </Footer>
             </Layout>
         </Layout>
     );
-
 };
 
 export default LayoutAdmin;

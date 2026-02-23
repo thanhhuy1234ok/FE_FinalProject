@@ -82,11 +82,11 @@ export const adminMenuItems: MenuItem[] = [
         children: [
             {
                 label: (
-                    <Link to="/manage-campus-room/buildings">
+                    <Link to="/manage-campus-room/campus">
                         Cơ sở và Tòa nhà
                     </Link>
                 ),
-                key: "/manage-campus-room/buildings",
+                key: "/manage-campus-room/campus",
                 icon: <ExceptionOutlined />,
             },
             {

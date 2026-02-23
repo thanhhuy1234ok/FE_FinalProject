@@ -6,7 +6,7 @@ import {
 import ButtonComponents from "./button";
 
 interface IProps {
-    handleExportData: () => void;
+    handleExportData?: () => void;
     setOpenModalImport: (v: boolean) => void;
     setOpenModal: (v: boolean) => void;
 

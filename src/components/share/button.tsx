@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 interface IProps {
     title: string;
     isVisible?: boolean;
-    onClick: () => void;
+    onClick?: () => void;
     icon?: ReactNode;
     color?: string;
 }

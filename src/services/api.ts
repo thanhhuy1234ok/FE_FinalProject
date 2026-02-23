@@ -1,5 +1,6 @@
 import {
     AUTH_API,
+    CAPUS_BUILDING_ROOM_API,
     CLASSES_API,
     MAJORS_API,
     ROLES_API,
@@ -87,5 +88,64 @@ export const getClassesAPI = (query: string) => {
 export const getYearsAPI = (query: string) => {
     return axios.get<IBackendRes<IModelPaginate<IYearsTable>>>(
         YEARS_API.LIST(query),
+    );
+};
+
+//** Campus Building Room API */
+export const getRoomsAPI = (query: string) => {
+    return axios.get<IBackendRes<IModelPaginate<IRoomsTable>>>(
+        CAPUS_BUILDING_ROOM_API.LIST_ROOM(query),
+    );
+};
+
+export const createRoomAPI = (data: Record<string, unknown>) => {
+    return axios.post<IBackendRes<IRoomsTable>>(
+        CAPUS_BUILDING_ROOM_API.CREATE_ROOM,
+        {
+            ...data,
+        },
+    );
+};
+
+export const previewCodeRoomAPI = (id: string | number, query: string) => {
+    return axios.get<IBackendRes<{ preview_code: string }>>(
+        CAPUS_BUILDING_ROOM_API.PREVIEW_CODE_ROOM(id, query),
+    );
+};
+
+export const getCampusAPI = (query: string) => {
+    return axios.get<IBackendRes<IModelPaginate<ICampusTable>>>(
+        CAPUS_BUILDING_ROOM_API.LIST_CAMPUS(query),
+    );
+};
+
+export const createCampusAPI = (data: Record<string, unknown>) => {
+    return axios.post<IBackendRes<ICampusTable>>(
+        CAPUS_BUILDING_ROOM_API.CREATE_CAMPUS,
+        {
+            ...data,
+        },
+    );
+};
+
+export const getDetailCampusAPI = (id: string | number) => {
+    return axios.get<IBackendRes<ICampusTable>>(
+        CAPUS_BUILDING_ROOM_API.DETAIL_CAMPUS(id),
+    );
+};
+
+export const deleteCampusAPI = (id: string | number) => {
+    return axios.delete<IBackendRes<null>>(
+        CAPUS_BUILDING_ROOM_API.DELETE_CAMPUS(id),
+    );
+};
+
+export const createBuildingAPI = (
+    CampusId: string | number,
+    data: Record<string, unknown>,
+) => {
+    return axios.post<IBackendRes<IBuildingTable>>(
+        CAPUS_BUILDING_ROOM_API.CREATE_BUILDING(CampusId),
+        { ...data },
     );
 };

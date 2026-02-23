@@ -1,18 +1,38 @@
 import type { MenuItem } from "./menu";
 
+export const findActiveKey = (
+    items: MenuItem[] = [],
+    path: string,
+): string | undefined => {
+    let bestMatch: string | undefined;
 
-export const findActiveKey = (items: MenuItem[] = [], path: string): string | undefined => {
-  for (const item of items) {
-    if (!item || typeof item !== "object") continue;
+    for (const item of items) {
+        if (!item || typeof item !== "object") continue;
 
-    if ("key" in item && item.key === path) {
-      return item.key as string;
+        const key = (item as any).key as string | undefined;
+        if (key) {
+            // ✅ exact match
+            if (key === path) return key;
+
+            // ✅ prefix match: "/manage-campus-room/campus" matches "/manage-campus-room/campus/1/buildings"
+            if (path === key || path.startsWith(key + "/")) {
+                // chọn key dài nhất (match cụ thể hơn)
+                if (!bestMatch || key.length > bestMatch.length) {
+                    bestMatch = key;
+                }
+            }
+        }
+
+        const children = (item as any).children as MenuItem[] | undefined;
+        if (Array.isArray(children)) {
+            const childMatch = findActiveKey(children, path);
+            if (childMatch) {
+                if (!bestMatch || childMatch.length > bestMatch.length) {
+                    bestMatch = childMatch;
+                }
+            }
+        }
     }
 
-    if ("children" in item && Array.isArray(item.children)) {
-      const found = findActiveKey(item.children as MenuItem[], path);
-      if (found) return found;
-    }
-  }
-  return undefined;
+    return bestMatch;
 };
