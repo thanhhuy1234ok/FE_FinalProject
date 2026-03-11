@@ -18,11 +18,11 @@ export const adminMenuItems: MenuItem[] = [
                 key: "/manage-user/users",
                 icon: <ExceptionOutlined />,
             },
-            {
-                label: <Link to="/manage-user/roles">Phân quyền</Link>,
-                key: "/manage-user/roles",
-                icon: <ExceptionOutlined />,
-            },
+            // {
+            //     label: <Link to="/manage-user/roles">Phân quyền</Link>,
+            //     key: "/manage-user/roles",
+            //     icon: <ExceptionOutlined />,
+            // },
         ],
     },
     {
@@ -31,8 +31,13 @@ export const adminMenuItems: MenuItem[] = [
         icon: <ExceptionOutlined />,
         children: [
             {
-                label: <Link to="/manage-curriculum/course">Khóa học</Link>,
-                key: "/manage-curriculum/course",
+                label: <Link to="/manage-curriculum/faculty">Khoa</Link>,
+                key: "/manage-curriculum/faculty",
+                icon: <ExceptionOutlined />,
+            },
+            {
+                label: <Link to="/manage-curriculum/department">Bộ môn</Link>,
+                key: "/manage-curriculum/department",
                 icon: <ExceptionOutlined />,
             },
             {
@@ -40,6 +45,16 @@ export const adminMenuItems: MenuItem[] = [
                 key: "/manage-curriculum/major",
                 icon: <ExceptionOutlined />,
             },
+            {
+                label: (
+                    <Link to="/manage-curriculum/course">
+                        Chương trình đào tạo
+                    </Link>
+                ),
+                key: "/manage-curriculum/course",
+                icon: <ExceptionOutlined />,
+            },
+
             // {
             //     label: <Link to="/manage-curriculum/semester">Kỳ học</Link>,
             //     key: "/manage-curriculum/semester",
@@ -64,13 +79,12 @@ export const adminMenuItems: MenuItem[] = [
         children: [
             {
                 label: <Link to="/manage-subject/class">Lớp học</Link>,
-                // NOTE: bạn đang để key là "/manage-curriculum/class" (có vẻ sai)
-                key: "/manage-curriculum/class",
+                key: "/manage-subject/class",
                 icon: <ExceptionOutlined />,
             },
             {
-                label: <Link to="/manage-subject/users">Lịch học</Link>,
-                key: "/manage-subject/users",
+                label: <Link to="/manage-subject/schedule">Lịch học</Link>,
+                key: "/manage-subject/schedule",
                 icon: <ExceptionOutlined />,
             },
         ],
@@ -98,93 +112,93 @@ export const adminMenuItems: MenuItem[] = [
             },
         ],
     },
-    {
-        label: "Quản lý Cơ sở vật chất",
-        key: "/manage-facility",
-        icon: <ExceptionOutlined />,
-        children: [
-            {
-                label: (
-                    <Link to="/manage-facility/facility">
-                        Quản lý Thiết bị theo số lượng
-                    </Link>
-                ),
-                key: "/manage-facility/facility",
-                icon: <ExceptionOutlined />,
-            },
-            {
-                label: (
-                    <Link to="/manage-facility/facility-items">
-                        Quản lý từng thiết bị cụ thể
-                    </Link>
-                ),
-                key: "/manage-facility/facility-items",
-                icon: <ExceptionOutlined />,
-            },
-            {
-                label: (
-                    <Link to="/manage-facility/device_loans">
-                        Quản lý mượn/trả thiết bị
-                    </Link>
-                ),
-                key: "/manage-facility/device_loans",
-                icon: <ExceptionOutlined />,
-            },
-            {
-                label: <Link to="/manage-facility/supplier">Nhà cung cấp</Link>,
-                key: "/manage-facility/supplier",
-                icon: <ExceptionOutlined />,
-            },
-            {
-                label: (
-                    <Link to="/manage-facility/facility-history">
-                        Lịch sử bố trí thiết bị
-                    </Link>
-                ),
-                key: "/manage-facility/facility-history",
-                icon: <ExceptionOutlined />,
-            },
-            {
-                label: (
-                    <Link to="/manage-facility/maintenance-history">
-                        Lịch sử bảo trì
-                    </Link>
-                ),
-                key: "/manage-facility/maintenance-history",
-                icon: <ExceptionOutlined />,
-            },
-            {
-                label: (
-                    <Link to="/manage-facility/facility-status-logs">
-                        Lịch sử thay đổi trạng thái
-                    </Link>
-                ),
-                key: "/manage-facility/facility-status-logs",
-                icon: <ExceptionOutlined />,
-            },
-        ],
-    },
-    {
-        label: "Quản lý người cán bộ giảng viên",
-        key: "/manage-teacher",
-        icon: <ExceptionOutlined />,
-        children: [
-            {
-                label: (
-                    <Link to="/manage-teacher/roles">Lịch sử chấm công</Link>
-                ),
-                key: "/manage-teacher/roles",
-                icon: <ExceptionOutlined />,
-            },
-            {
-                label: (
-                    <Link to="/manage-teacher/salary">
-                        Tính lương giảng viên
-                    </Link>
-                ),
-                key: "/manage-teacher/salary",
-                icon: <ExceptionOutlined />,
-            },
-        ],
-    },
+    // {
+    //     label: "Quản lý Cơ sở vật chất",
+    //     key: "/manage-facility",
+    //     icon: <ExceptionOutlined />,
+    //     children: [
+    //         {
+    //             label: (
+    //                 <Link to="/manage-facility/facility">
+    //                     Quản lý Thiết bị theo số lượng
+    //                 </Link>
+    //             ),
+    //             key: "/manage-facility/facility",
+    //             icon: <ExceptionOutlined />,
+    //         },
+    //         {
+    //             label: (
+    //                 <Link to="/manage-facility/facility-items">
+    //                     Quản lý từng thiết bị cụ thể
+    //                 </Link>
+    //             ),
+    //             key: "/manage-facility/facility-items",
+    //             icon: <ExceptionOutlined />,
+    //         },
+    //         {
+    //             label: (
+    //                 <Link to="/manage-facility/device_loans">
+    //                     Quản lý mượn/trả thiết bị
+    //                 </Link>
+    //             ),
+    //             key: "/manage-facility/device_loans",
+    //             icon: <ExceptionOutlined />,
+    //         },
+    //         {
+    //             label: <Link to="/manage-facility/supplier">Nhà cung cấp</Link>,
+    //             key: "/manage-facility/supplier",
+    //             icon: <ExceptionOutlined />,
+    //         },
+    //         {
+    //             label: (
+    //                 <Link to="/manage-facility/facility-history">
+    //                     Lịch sử bố trí thiết bị
+    //                 </Link>
+    //             ),
+    //             key: "/manage-facility/facility-history",
+    //             icon: <ExceptionOutlined />,
+    //         },
+    //         {
+    //             label: (
+    //                 <Link to="/manage-facility/maintenance-history">
+    //                     Lịch sử bảo trì
+    //                 </Link>
+    //             ),
+    //             key: "/manage-facility/maintenance-history",
+    //             icon: <ExceptionOutlined />,
+    //         },
+    //         {
+    //             label: (
+    //                 <Link to="/manage-facility/facility-status-logs">
+    //                     Lịch sử thay đổi trạng thái
+    //                 </Link>
+    //             ),
+    //             key: "/manage-facility/facility-status-logs",
+    //             icon: <ExceptionOutlined />,
+    //         },
+    //     ],
+    // },
+    // {
+    //     label: "Quản lý người cán bộ giảng viên",
+    //     key: "/manage-teacher",
+    //     icon: <ExceptionOutlined />,
+    //     children: [
+    //         {
+    //             label: (
+    //                 <Link to="/manage-teacher/roles">Lịch sử chấm công</Link>
+    //             ),
+    //             key: "/manage-teacher/roles",
+    //             icon: <ExceptionOutlined />,
+    //         },
+    //         {
+    //             label: (
+    //                 <Link to="/manage-teacher/salary">
+    //                     Tính lương giảng viên
+    //                 </Link>
+    //             ),
+    //             key: "/manage-teacher/salary",
+    //             icon: <ExceptionOutlined />,
+    //         },
+    //     ],
+    // },
 ];

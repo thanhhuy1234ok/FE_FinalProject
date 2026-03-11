@@ -6,6 +6,7 @@ import {
     Col,
     Descriptions,
     Divider,
+    Result,
     Row,
     Space,
     Spin,
@@ -23,56 +24,19 @@ import {
     UserOutlined,
 } from "@ant-design/icons";
 import { ProCard } from "@ant-design/pro-components";
+import { getDetailUserAPI } from "@/services/api";
 
 const { Title, Text } = Typography;
 
-type RoleName = "ADMIN" | "TEACHER" | "STUDENT";
-
-type BaseUser = {
-    id: string;
-    name?: string;
-    email: string;
-    gender?: "male" | "female" | "other";
-    phone?: string;
-    address?: string;
-    avatarUrl?: string;
-    isActive: boolean;
-    createdAt?: string;
-    updatedAt?: string;
-    role?: { name: RoleName };
-};
-
-type Teacher = {
-    id: number;
-    user_id: string;
-    msgv: string;
-    specialization?: string;
-    degree?: string;
-    faculty?: string;
-};
-
-type Student = {
-    id: number;
-    user_id: string;
-    mssv: string;
-    major?: { id: number; name: string };
-    adminClass?: { id: number; code: string; name?: string };
-    yearOfAdmission?: { id: number; year: string };
-};
-
-type UserDetail = BaseUser & {
-    teacher?: Teacher | null;
-    student?: Student | null;
-};
-
-function formatGender(g?: BaseUser["gender"]) {
+function formatGender(g?: any) {
     if (!g) return "N/A";
     if (g === "male") return "Nam";
     if (g === "female") return "Nữ";
     return "Khác";
 }
 
-function roleTag(role?: RoleName) {
+function roleTag(role?: any) {
+    console.log(role);
     if (!role) return <Tag>UNKNOWN</Tag>;
     if (role === "ADMIN") return <Tag color="red">ADMIN</Tag>;
     if (role === "TEACHER") return <Tag color="gold">GIẢNG VIÊN</Tag>;
@@ -80,40 +44,45 @@ function roleTag(role?: RoleName) {
 }
 
 /** TODO: thay bằng service thật của bạn */
-async function fetchUserDetail(id: string): Promise<UserDetail> {
-    // ví dụ: return (await api.get(`/users/${id}`)).data
-    await new Promise((r) => setTimeout(r, 400));
-
-    // MOCK: bạn xoá phần này khi nối API
-    return {
-        id,
-        name: "Nguyễn Văn A",
-        email: "demo@gmail.com",
-        gender: "male",
-        phone: "0909 000 111",
-        address: "123 Nguyễn Trãi, Hà Nội",
-        avatarUrl: "",
-        isActive: true,
-        role: { name: "TEACHER" },
-        student: {
-            id: 1,
-            user_id: id,
-            mssv: "240001",
-            major: { id: 1, name: "Công nghệ thông tin" },
-            adminClass: { id: 5, code: "CTK45", name: "Lớp CTK45" },
-            yearOfAdmission: { id: 1, year: "2024" },
-        },
-        teacher: null,
-    };
+async function fetchUserDetail(id: string) {
+    // // ví dụ: return (await api.get(`/users/${id}`)).data
+    // await new Promise((r) => setTimeout(r, 400));
+    // // MOCK: bạn xoá phần này khi nối API
+    // return {
+    //     id,
+    //     name: "Nguyễn Văn A",
+    //     email: "demo@gmail.com",
+    //     gender: "male",
+    //     phone: "0909 000 111",
+    //     address: "123 Nguyễn Trãi, Hà Nội",
+    //     avatarUrl: "",
+    //     isActive: true,
+    //     role: { name: "TEACHER" },
+    //     student: {
+    //         id: 1,
+    //         user_id: id,
+    //         mssv: "240001",
+    //         major: { id: 1, name: "Công nghệ thông tin" },
+    //         adminClass: { id: 5, code: "CTK45", name: "Lớp CTK45" },
+    //         yearOfAdmission: { id: 1, year: "2024" },
+    //     },
+    //     teacher: null,
+    // };
+    const res = await getDetailUserAPI(id);
+    if (!res || !res.data) {
+        throw new Error("Failed to fetch user detail");
+    }
+    console.log(res.data);
+    return res.data;
 }
 
 /** TODO: thay bằng API thật */
-async function toggleActiveUser(_id: string, _toActive: boolean) {
+async function toggleActiveUser(_id: string | number, _toActive: boolean) {
     await new Promise((r) => setTimeout(r, 300));
 }
 
 /** TODO: thay bằng API thật */
-async function deleteUser(_id: string) {
+async function deleteUser(_id: string | number) {
     await new Promise((r) => setTimeout(r, 300));
 }
 
@@ -122,7 +91,7 @@ export default function UserDetailPage() {
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(true);
-    const [data, setData] = useState<UserDetail | null>(null);
+    const [data, setData] = useState<IUserDetail | null>(null);
 
     const role = data?.role?.name;
 
@@ -137,7 +106,11 @@ export default function UserDetailPage() {
             try {
                 setLoading(true);
                 const res = await fetchUserDetail(id);
-                setData(res);
+                if (res) {
+                    setData(res);
+                } else {
+                    message.error("Không tải được dữ liệu chi tiết.");
+                }
             } catch (e) {
                 message.error("Không tải được dữ liệu chi tiết.");
             } finally {
@@ -186,8 +159,20 @@ export default function UserDetailPage() {
 
     if (!data) {
         return (
-            <div style={{ padding: 24 }}>
-                <Text>Không có dữ liệu.</Text>
+            <div style={{ padding: 24, textAlign: "center" }}>
+                <Result
+                    status="warning"
+                    title="Người dùng đã bị khóa"
+                    extra={
+                        <Button
+                            type="primary"
+                            key="console"
+                            onClick={() => navigate(-1)}
+                        >
+                            Quay lại
+                        </Button>
+                    }
+                />
             </div>
         );
     }
@@ -219,39 +204,34 @@ export default function UserDetailPage() {
 
                     <Col xs={24} lg={12}>
                         <ProCard title="Tài khoản" bordered>
-                            <Descriptions column={1} size="middle">
-                                <Descriptions.Item label="Email">
+                            <Descriptions
+                                column={1}
+                                size="middle"
+                                colon={false}
+                            >
+                                <Descriptions.Item label="Email:">
                                     {data.email}
                                 </Descriptions.Item>
-                                <Descriptions.Item label="Vai trò">
-                                    {roleTag(role)}
+                                <Descriptions.Item label="Vai trò:">
+                                    {roleTag(data.role?.name)}
                                 </Descriptions.Item>
-                                <Descriptions.Item label="Trạng thái">
+                                <Descriptions.Item label="Trạng thái:">
                                     {data.isActive ? (
                                         <Tag color="green">Đang hoạt động</Tag>
                                     ) : (
                                         <Tag>Đã khoá</Tag>
                                     )}
                                 </Descriptions.Item>
-                                <Descriptions.Item label="ID">
-                                    {data.id}
+                                <Descriptions.Item
+                                    label=" "
+                                    className="no-colon-item"
+                                >
+                                    <div style={{ height: 22 }} />
                                 </Descriptions.Item>
                             </Descriptions>
                         </ProCard>
                     </Col>
-                </Row>
-            ),
-        },
-        {
-            key: "roleInfo",
-            label:
-                role === "TEACHER"
-                    ? "Giảng dạy"
-                    : role === "STUDENT"
-                      ? "Học tập"
-                      : "Theo vai trò",
-            children: (
-                <Row gutter={[16, 16]}>
+
                     {role === "TEACHER" ? (
                         <Col span={24}>
                             <ProCard title="Thông tin giảng viên" bordered>
@@ -259,9 +239,9 @@ export default function UserDetailPage() {
                                     <Descriptions.Item label="MSGV">
                                         {data.teacher?.msgv || "N/A"}
                                     </Descriptions.Item>
-                                    <Descriptions.Item label="Khoa / Bộ môn">
-                                        {data.teacher?.faculty || "N/A"}
-                                    </Descriptions.Item>
+                                    {/* <Descriptions.Item label="Khoa / Bộ môn">
+                                        {data.teacher?.faculty?.name || "N/A"}
+                                    </Descriptions.Item> */}
                                     <Descriptions.Item label="Chuyên ngành">
                                         {data.teacher?.specialization || "N/A"}
                                     </Descriptions.Item>
@@ -278,11 +258,11 @@ export default function UserDetailPage() {
                                     <Descriptions.Item label="MSSV">
                                         {data.student?.mssv || "N/A"}
                                     </Descriptions.Item>
-                                    <Descriptions.Item label="Năm nhập học">
+                                    <Descriptions.Item label="Khóa học">
                                         {data.student?.yearOfAdmission?.year ||
                                             "N/A"}
                                     </Descriptions.Item>
-                                    <Descriptions.Item label="Ngành">
+                                    <Descriptions.Item label="Chuyên Ngành">
                                         {data.student?.major?.name || "N/A"}
                                     </Descriptions.Item>
                                     <Descriptions.Item label="Lớp hành chính">
@@ -307,16 +287,31 @@ export default function UserDetailPage() {
             ),
         },
         {
+            key: "roleInfo",
+            label:
+                role === "TEACHER"
+                    ? "Giảng dạy"
+                    : role === "STUDENT"
+                      ? "Học tập"
+                      : "Theo vai trò",
+            children: <>demo</>,
+        },
+        {
             key: "audit",
             label: "Nhật ký",
             children: (
                 <ProCard title="Thông tin hệ thống" bordered>
                     <Descriptions column={2} size="middle">
                         <Descriptions.Item label="Tạo lúc">
-                            {data.createdAt || "N/A"}
+                            {data.createdAt
+                                ? new Date(data.createdAt).toLocaleString()
+                                : "N/A"}
                         </Descriptions.Item>
+
                         <Descriptions.Item label="Cập nhật">
-                            {data.updatedAt || "N/A"}
+                            {data.updatedAt
+                                ? new Date(data.updatedAt).toLocaleString()
+                                : "N/A"}
                         </Descriptions.Item>
                     </Descriptions>
                     <Divider />
@@ -346,7 +341,7 @@ export default function UserDetailPage() {
                             <Avatar
                                 size={52}
                                 icon={<UserOutlined />}
-                                src={data.avatarUrl || undefined}
+                                src={data.avatar || undefined}
                             />
 
                             <div>

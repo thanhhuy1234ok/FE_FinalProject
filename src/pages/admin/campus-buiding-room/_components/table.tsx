@@ -14,7 +14,7 @@ const TableCampusBuildingRoom = () => {
     const [openModal, setOpenModal] = useState<boolean>(false);
     const [openModalImport, setOpenModalImport] = useState(false);
     const [openViewDetail, setOpenViewDetail] = useState<boolean>(false);
-    const [dataUpdate, setDataUpdate] = useState<ICampusTable | null>(null);
+    const [dataUpdate, setDataUpdate] = useState<ICampus | null>(null);
     const navigate = useNavigate();
     const [meta, setMeta] = useState({
         current: 1,
@@ -26,7 +26,7 @@ const TableCampusBuildingRoom = () => {
     const handleViewDetail = (id: number) => {
         navigate(`${id}/buildings`);
     };
-    const columns: ProColumns<ICampusTable>[] = [
+    const columns: ProColumns<ICampus>[] = [
         {
             title: "Id",
             dataIndex: "id",
@@ -81,7 +81,7 @@ const TableCampusBuildingRoom = () => {
     const tableRef = useRef<ActionType>();
     return (
         <div className="user-page">
-            <DataTable<ICampusTable>
+            <DataTable<ICampus>
                 actionRef={tableRef}
                 headerTitle="Danh sách Campus"
                 rowKey="id"
@@ -94,7 +94,7 @@ const TableCampusBuildingRoom = () => {
                         "🚀 ~ file: table.tsx:143 ~ request={async ~ res:",
                         res,
                     );
-                    const result: ICampusTable[] = res?.data?.result ?? [];
+                    const result: ICampus[] = res?.data?.result ?? [];
                     const nextMeta = res?.data?.meta ?? {
                         current: params.current ?? 1,
                         pageSize: params.pageSize ?? 10,

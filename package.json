@@ -12,6 +12,7 @@
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
     "@ant-design/pro-components": "^2.8.10",
+    "@nestjs/mapped-types": "*",
     "antd": "5.29.3",
     "axios": "^1.13.2",
     "dayjs": "^1.11.19",

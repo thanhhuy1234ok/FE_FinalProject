@@ -6,7 +6,8 @@ import useUserHooks from "../_hooks/user.hook";
 import { useCallback } from "react";
 
 export const renderByRole = () => {
-    const { majorOptions, classOptions, yearOptions } = useUserHooks();
+    const { majorOptions, classOptions, yearOptions, departmentOptions } =
+        useUserHooks();
     const fetchMajorOptions = useCallback(async () => {
         return majorOptions ?? [];
     }, [majorOptions]);
@@ -18,6 +19,9 @@ export const renderByRole = () => {
     const fetchYearOptions = useCallback(async () => {
         return yearOptions ?? [];
     }, [yearOptions]);
+    const fetchDepartmentOptions = useCallback(async () => {
+        return departmentOptions ?? [];
+    }, [departmentOptions]);
     return (
         <ProForm.Item shouldUpdate noStyle>
             {(formInstance: FormInstance) => {
@@ -54,6 +58,27 @@ export const renderByRole = () => {
                                     ]}
                                     placeholder="Nhập trình độ học vấn"
                                 />
+                            </Col>
+                            <Col lg={9} md={9} sm={24} xs={24}>
+                                <ProForm.Item
+                                    name="department"
+                                    label="Bộ môn"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: "Vui lòng chọn bộ môn!",
+                                        },
+                                    ]}
+                                >
+                                    <DebounceSelect
+                                        allowClear
+                                        showSearch
+                                        labelInValue // ✅ QUAN TRỌNG
+                                        placeholder="Chọn bộ môn"
+                                        fetchOptions={fetchDepartmentOptions}
+                                        style={{ width: "100%" }}
+                                    />
+                                </ProForm.Item>
                             </Col>
                         </>
                     );

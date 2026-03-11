@@ -1,0 +1,103 @@
+.admin-header {
+    height: 56px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(10px);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 16px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+
+    &__trigger {
+        width: 40px;
+        height: 40px;
+        border: none;
+        outline: none;
+        background: #fff;
+        border-radius: 10px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        // box-shadow:
+        //     0 1px 2px rgba(0, 0, 0, 0.04),
+        //     0 4px 12px rgba(0, 0, 0, 0.06);
+        transition: all 0.2s ease;
+
+        .anticon {
+            font-size: 18px;
+        }
+
+        &:hover {
+            transform: translateY(-1px);
+            box-shadow:
+                0 2px 6px rgba(0, 0, 0, 0.06),
+                0 8px 16px rgba(0, 0, 0, 0.08);
+        }
+    }
+
+    &__right {
+        min-width: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    &__account {
+        cursor: pointer;
+        border-radius: 12px;
+        padding: 6px 10px;
+        transition: background 0.2s ease;
+        min-width: 0;
+
+        &:hover {
+            background: rgba(99, 102, 241, 0.06);
+        }
+    }
+
+    &__email {
+        max-width: 220px;
+        display: inline-block;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .admin-header {
+        padding: 0 12px;
+        height: 54px;
+
+        &__email {
+            max-width: 160px;
+        }
+    }
+}
+
+@media (max-width: 767.98px) {
+    .admin-header {
+        height: 52px;
+        padding: 0 10px;
+
+        &__trigger {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+        }
+
+        &__account {
+            padding: 4px 6px;
+        }
+    }
+}
+
+@media (max-width: 575.98px) {
+    .admin-header {
+        &__trigger {
+            width: 36px;
+            height: 36px;
+        }
+    }
+}

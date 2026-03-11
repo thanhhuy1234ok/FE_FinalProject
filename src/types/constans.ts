@@ -64,3 +64,42 @@ export const CAPUS_BUILDING_ROOM_API = {
     CREATE_BUILDING: (CampusId: string | number) =>
         `${API_BASE}/campus/${CampusId}/buildings`,
 };
+
+export const TERMS_API = {
+    LIST: (query: string) => `${API_BASE}/terms?${query}`,
+    CREATE: `${API_BASE}/terms`,
+    DETAIL: (id: string | number) => `${API_BASE}/terms/${id}`,
+    DELETE: (id: string | number) => `${API_BASE}/terms/${id}`,
+};
+
+export const Curriculum_API = {
+    LIST: (query: string) => `${API_BASE}/curriculum?${query}`,
+    CREATE: `${API_BASE}/curriculum`,
+    DETAIL: (id: string | number) => `${API_BASE}/curriculums/${id}`,
+    DELETE: (id: string | number) => `${API_BASE}/curriculums/${id}`,
+    Preview: `${API_BASE}/curriculum/preview-name-code`,
+};
+
+export const CURRICULUM_SUBJECT_API = {
+    CREATE_BULK: `${API_BASE}/curriculum-subjects/bulk`,
+    CREATE_BULK_NAME: `${API_BASE}/curriculum-subjects/bulkName`,
+    LIST: (query: string) => `${API_BASE}/curriculum-subjects?${query}`,
+};
+
+export const SUBJECT_API = {
+    LIST: (query: string) => `${API_BASE}/subjects?${query}`,
+};
+
+export const DEPARTMENT_API = {
+    LIST: (query: string) => `${API_BASE}/departments?${query}`,
+    CREATE: `${API_BASE}/departments`,
+    DETAIL: (id: number) => `${API_BASE}/departments/${id}`,
+    DELETE: (id: string | number) => `${API_BASE}/departments/${id}`,
+};
+
+export const FACULTY_API = {
+    LIST: (query: string) => `${API_BASE}/faculty?${query}`,
+    CREATE: `${API_BASE}/faculty`,
+    DETAIL: (id: number) => `${API_BASE}/faculty/${id}`,
+    DELETE: (id: string | number) => `${API_BASE}/faculty/${id}`,
+};

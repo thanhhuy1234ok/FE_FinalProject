@@ -7,7 +7,7 @@ import ButtonComponents from "./button";
 
 interface IProps {
     handleExportData?: () => void;
-    setOpenModalImport: (v: boolean) => void;
+    setOpenModalImport?: (v: boolean) => void;
     setOpenModal: (v: boolean) => void;
 
     showExport?: boolean;
@@ -35,7 +35,7 @@ const RenderHeaderTable = ({
                     />
                 )}
 
-                {showImport && (
+                {showImport && setOpenModalImport && (
                     <ButtonComponents
                         icon={<CloudUploadOutlined />}
                         onClick={() => setOpenModalImport(true)}

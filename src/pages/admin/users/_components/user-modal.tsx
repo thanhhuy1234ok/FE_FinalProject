@@ -16,8 +16,8 @@ interface IProps {
     openModal: boolean;
     setOpenModal: (v: boolean) => void;
     refreshTable: () => void;
-    setDataUpdate: (v: IUserTable | null) => void;
-    dataUpdate: IUserTable | null;
+    setDataUpdate: (v: IUserDetail | null) => void;
+    dataUpdate: IUserDetail | null;
 }
 
 const UserModal = (props: IProps) => {
@@ -42,7 +42,7 @@ const UserModal = (props: IProps) => {
         const majorId = valuesForm?.major?.value;
         const classId = valuesForm?.AdminClass?.value;
         const yearOfAdmissionId = valuesForm?.YearOfStudy?.value;
-
+        const departmentId = valuesForm?.department?.value;
         const basePayload = {
             name: valuesForm.name,
             email: valuesForm.email,
@@ -59,6 +59,7 @@ const UserModal = (props: IProps) => {
                 ...basePayload,
                 specialization: valuesForm.specialization,
                 degree: valuesForm.degree,
+                departmentId: departmentId,
             };
         }
 
@@ -73,7 +74,7 @@ const UserModal = (props: IProps) => {
 
         const res = await createUserAPI(payload);
         if (res && res.data) {
-            message.success("update user thành công");
+            message.success("Tạo user thành công");
             form.resetFields();
             setOpenModal(false);
             refreshTable();
@@ -199,7 +200,7 @@ const UserModal = (props: IProps) => {
                                 },
                             ]}
                             placeholder="Nhập email"
-                            disabled={!!!dataUpdate}
+                            disabled={!!dataUpdate}
                         />
                     </Col>
                     <Col lg={12} md={12} sm={24} xs={24}>

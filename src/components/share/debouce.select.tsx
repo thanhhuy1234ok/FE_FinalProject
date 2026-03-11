@@ -5,7 +5,7 @@ import React, {
     useEffect,
     useCallback,
 } from "react";
-import { Select, Spin } from "antd";
+import { Empty, Select, Spin } from "antd";
 import type { SelectProps } from "antd/es/select";
 import debounce from "lodash/debounce";
 
@@ -32,6 +32,7 @@ export function DebounceSelect<
     ...props
 }: DebounceSelectProps<OptionType>) {
     const [fetching, setFetching] = useState(false);
+    const [hasFetched, setHasFetched] = useState(false);
     const [options, setOptions] = useState<OptionType[]>([]);
     const fetchRef = useRef(0);
 
@@ -46,7 +47,10 @@ export function DebounceSelect<
                 if (fetchId !== fetchRef.current) return; // ignore out-of-order responses
                 setOptions(newOptions);
             } finally {
-                if (fetchId === fetchRef.current) setFetching(false);
+                if (fetchId === fetchRef.current) {
+                    setFetching(false);
+                    setHasFetched(true);
+                }
             }
         },
         [fetchOptions],
@@ -79,7 +83,9 @@ export function DebounceSelect<
             labelInValue
             filterOption={false}
             onSearch={debounceFetcher}
-            notFoundContent={fetching ? <Spin size="small" /> : null}
+            notFoundContent={
+                fetching ? <Spin size="small" /> : hasFetched ? <Empty /> : null
+            }
             options={options}
             onFocus={handleOnFocus}
             onBlur={handleOnBlur}

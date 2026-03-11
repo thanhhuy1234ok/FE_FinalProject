@@ -1,5 +1,7 @@
+import ListMajor from "./_components/list-major";
+
 const MajorManagerPage = () => {
-    return <>major page</>;
+    return <ListMajor />;
 };
 
 export default MajorManagerPage;

@@ -1,19 +1,21 @@
 import {
     deleteUserAPI,
     getClassesAPI,
+    getDepartmentsAPI,
     getMajorsAPI,
     getRolesAPI,
     getYearsAPI,
 } from "@/services/api";
 import type { ActionType } from "@ant-design/pro-components";
-import { set } from "lodash";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const useUserHooks = () => {
-    const [roles, setRoles] = useState<IRolesTable[]>([]);
-    const [majors, setMajors] = useState<IMajorsTable[]>([]);
-    const [classes, setClasses] = useState<IClassesTable[]>([]);
-    const [years, setYears] = useState<IYearsTable[]>([]);
+    const [roles, setRoles] = useState<IRole[]>([]);
+    const [majors, setMajors] = useState<IMajor[]>([]);
+    const [classes, setClasses] = useState<IClass[]>([]);
+    const [years, setYears] = useState<IYear[]>([]);
+    const [departments, setDepartments] = useState<IDepartment[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [loadingMajors, setLoadingMajors] = useState(false);
     const [loadingClasses, setLoadingClasses] = useState(false);
@@ -61,11 +63,20 @@ const useUserHooks = () => {
                 setLoadingYears(false);
             }
         };
+        const fetchDepartments = async () => {
+            try {
+                const res = await getDepartmentsAPI("current=1&pageSize=100");
+                setDepartments(res?.data?.result ?? []);
+            } catch (error) {
+                console.error("Error fetching departments:", error);
+            }
+        };
 
         void fetchClasses();
         void fetchYears();
         void fetchRoles();
         void fetchMajors();
+        void fetchDepartments();
     }, []);
 
     const roleOptions: IOptionSelect[] = useMemo(() => {
@@ -95,6 +106,12 @@ const useUserHooks = () => {
         }));
     }, [years]);
 
+    const departmentOptions: IOptionSelect[] = useMemo(() => {
+        return departments.map((item) => ({
+            label: item.name,
+            value: item.id,
+        }));
+    }, [departments]);
     const handleDeleteUser = async (userId: number | string) => {
         // Implement the delete user logic here
         setIsDeleteUser(true);
@@ -113,6 +130,7 @@ const useUserHooks = () => {
         majorOptions,
         classOptions,
         yearOptions,
+        departmentOptions,
         loadingClasses,
         loadingYears,
         loadingMajors,

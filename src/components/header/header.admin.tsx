@@ -1,7 +1,15 @@
 import React from "react";
-import { Avatar, Dropdown, Space } from "antd";
-import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
+import { Avatar, Dropdown, Space, Typography, Grid } from "antd";
+import {
+    MenuFoldOutlined,
+    MenuUnfoldOutlined,
+    UserOutlined,
+    LogoutOutlined,
+} from "@ant-design/icons";
 import type { MenuProps } from "antd";
+import "@/styles/header.admin.scss";
+const { Text } = Typography;
+const { useBreakpoint } = Grid;
 
 type Props = {
     collapsed: boolean;
@@ -20,51 +28,73 @@ const AdminHeader: React.FC<Props> = ({
     onProfile,
     onLogout,
 }) => {
+    const screens = useBreakpoint();
+    const isMobile = !screens.md;
+
     const itemsDropdown: MenuProps["items"] = [
         {
-            label: (
-                <span style={{ cursor: "pointer" }} onClick={onProfile}>
-                    Quản lý tài khoản
-                </span>
-            ),
             key: "account",
+            icon: <UserOutlined />,
+            label: "Quản lý tài khoản",
         },
         {
-            label: (
-                <span style={{ cursor: "pointer" }} onClick={onLogout}>
-                    Đăng xuất
-                </span>
-            ),
             key: "logout",
+            icon: <LogoutOutlined />,
+            label: "Đăng xuất",
         },
     ];
 
-    return (
-        <div
-            className="admin-header"
-            style={{
-                height: "50px",
-                borderBottom: "1px solid #ebebeb",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "0 15px",
-            }}
-        >
-            <span>
-                {React.createElement(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
-                    className: "trigger",
-                    onClick: onToggleCollapsed,
-                })}
-            </span>
+    const handleMenuClick: MenuProps["onClick"] = ({ key }) => {
+        if (key === "account") {
+            onProfile();
+            return;
+        }
 
-            <Dropdown menu={{ items: itemsDropdown }} trigger={["click"]}>
-                <Space style={{ cursor: "pointer" }}>
-                    <Avatar src={avatarUrl} />
-                    {email}
-                </Space>
-            </Dropdown>
-        </div>
+        if (key === "logout") {
+            onLogout();
+        }
+    };
+
+    return (
+        <header className="admin-header">
+            <button
+                type="button"
+                className="admin-header__trigger"
+                onClick={onToggleCollapsed}
+                aria-label="Toggle menu"
+            >
+                {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            </button>
+
+            <div className="admin-header__right">
+                <Dropdown
+                    menu={{
+                        items: itemsDropdown,
+                        onClick: handleMenuClick,
+                    }}
+                    trigger={["click"]}
+                    placement="bottomRight"
+                >
+                    <div
+                        className="admin-header__account"
+                        role="button"
+                        tabIndex={0}
+                    >
+                        <Space size={10}>
+                            <Avatar src={avatarUrl} />
+                            {!isMobile && (
+                                <Text
+                                    className="admin-header__email"
+                                    ellipsis={{ tooltip: email }}
+                                >
+                                    {email || "Tài khoản"}
+                                </Text>
+                            )}
+                        </Space>
+                    </div>
+                </Dropdown>
+            </div>
+        </header>
     );
 };
 

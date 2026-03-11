@@ -5,7 +5,7 @@ import type { ActionType, ProColumns } from "@ant-design/pro-components";
 import { Badge, Tag, Tooltip, Typography } from "antd";
 import dayjs from "dayjs";
 import { useRef, useState } from "react";
-import "@/styles/user.table.scss"
+import "@/styles/user.table.scss";
 const { Text } = Typography;
 const RoleTable = () => {
     const tableRef = useRef<ActionType | null>(null);
@@ -17,7 +17,7 @@ const RoleTable = () => {
         total: 0,
     });
 
-    const columns: ProColumns<IRolesTable>[] = [
+    const columns: ProColumns<IRole>[] = [
         {
             title: "Id",
             dataIndex: "id",
@@ -50,24 +50,26 @@ const RoleTable = () => {
             render: (_text, record) => {
                 return (
                     <>
-                        <Tag color="success"><Badge status="success" /> {record.isActive ? "Đang hoạt động" : "oFF"}</Tag>
+                        <Tag color="success">
+                            <Badge status="success" />{" "}
+                            {record.isActive ? "Đang hoạt động" : "oFF"}
+                        </Tag>
                     </>
-                )
-            }
+                );
+            },
         },
         {
-            title: 'CreatedAt',
-            dataIndex: 'createdAt',
+            title: "CreatedAt",
+            dataIndex: "createdAt",
             width: 200,
             sorter: true,
             render: (_text, record) => {
                 return (
-                    <>{dayjs(record.createdAt).format('DD-MM-YYYY HH:mm:ss')}</>
-                )
+                    <>{dayjs(record.createdAt).format("DD-MM-YYYY HH:mm:ss")}</>
+                );
             },
             hideInSearch: true,
         },
-
     ];
 
     return (
@@ -95,14 +97,13 @@ const RoleTable = () => {
 
                     const res = await getRolesAPI(qs);
 
-                    const result: IRolesTable[] = res?.data?.result ?? [];
-                    const nextMeta =
-                        res?.data?.meta ?? ({
-                            current: params.current ?? 1,
-                            pageSize: params.pageSize ?? 10,
-                            pages: 0,
-                            total: result.length,
-                        });
+                    const result: IRole[] = res?.data?.result ?? [];
+                    const nextMeta = res?.data?.meta ?? {
+                        current: params.current ?? 1,
+                        pageSize: params.pageSize ?? 10,
+                        pages: 0,
+                        total: result.length,
+                    };
 
                     setMeta(nextMeta);
 
@@ -112,16 +113,15 @@ const RoleTable = () => {
                         total: nextMeta.total ?? result.length,
                     };
                 }}
-
                 search={{
-                    layout: 'vertical',
+                    layout: "vertical",
                     defaultCollapsed: false,
-                    span: 6,          // giảm độ rộng mỗi field để đỡ loãng
-                    labelWidth: 55,   // label gọn
+                    span: 6, // giảm độ rộng mỗi field để đỡ loãng
+                    labelWidth: 55, // label gọn
                 }}
             />
         </div>
-    )
-}
+    );
+};
 
-export default RoleTable
+export default RoleTable;

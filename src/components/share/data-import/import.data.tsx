@@ -1,32 +1,23 @@
-import { Modal, notification, Table } from "antd";
+import { Modal, notification, Table, message, Upload } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
 import * as XLSX from "xlsx";
 import { useState } from "react";
-
-import { message, Upload } from "antd";
 import type { UploadProps } from "antd";
 const { Dragger } = Upload;
 import type { UploadRequestOption } from "rc-upload/lib/interface";
 
-interface ExcelData {
-    name: string;
-    email: string;
-    role: string;
-    major: string;
-    class: string;
-    yearOfAdmission: number;
-}
-
-const ImportExcelData: React.FC<IDataImportProps> = (props) => {
+const ImportExcelData = <T extends Record<string, any>>(
+    props: IDataImportProps<T>,
+) => {
     const { setOpenModalImport, openModalImport } = props;
-    const [dataExcel, setDataExcel] = useState<ExcelData[]>([]);
+
+    // ✅ state dùng T[]
+    const [dataExcel, setDataExcel] = useState<T[]>([]);
 
     const dummyRequest = (options: UploadRequestOption) => {
         const { onSuccess } = options;
         if (onSuccess) {
-            setTimeout(() => {
-                onSuccess("ok");
-            }, 1000);
+            setTimeout(() => onSuccess("ok"), 500);
         }
     };
 
@@ -38,30 +29,31 @@ const ImportExcelData: React.FC<IDataImportProps> = (props) => {
         customRequest: dummyRequest,
         onChange(info: any) {
             const { status } = info.file;
-            if (status !== "uploading") {
-                console.log(info.file, info.fileList);
-            }
+
             if (status === "done") {
-                if (info.fileList && info.fileList.length > 0) {
+                if (info.fileList?.length > 0) {
                     const file = info.fileList[0].originFileObj as File;
                     const reader = new FileReader();
                     reader.readAsArrayBuffer(file);
+
                     reader.onload = function () {
                         const data = new Uint8Array(
                             reader.result as ArrayBuffer,
                         );
                         const workbook = XLSX.read(data, { type: "array" });
                         const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const json = XLSX.utils.sheet_to_json<ExcelData>(
-                            sheet,
-                            {
-                                header: props.dataMapping,
-                                range: 1,
-                            },
-                        );
-                        if (json && json.length > 0) setDataExcel(json);
+
+                        // XLSX header cần string[] -> cast từ (keyof T)[]
+                        const json = XLSX.utils.sheet_to_json<any>(sheet, {
+                            header: props.dataMapping as string[],
+                            range: 1, // bỏ header row
+                            defval: null, // tránh undefined
+                        }) as T[];
+
+                        if (json?.length) setDataExcel(json);
                     };
                 }
+
                 message.success(
                     `${info.file.name} file uploaded successfully.`,
                 );
@@ -69,45 +61,67 @@ const ImportExcelData: React.FC<IDataImportProps> = (props) => {
                 message.error(`${info.file.name} file upload failed.`);
             }
         },
-        onDrop(e: React.DragEvent<HTMLDivElement>) {
+        onDrop(e) {
             console.log("Dropped files", e.dataTransfer.files);
         },
     };
 
     const handleSubmit = async () => {
-        const data = dataExcel.map((item) => ({
-            ...item,
-            password: "123456",
-        }));
+        try {
+            const payload = props.transformData
+                ? props.transformData(dataExcel)
+                : dataExcel;
 
-        const res = await props.apiFunction(data);
-        console.log(res);
-        if (res.data) {
-            console.log(res.data);
-            notification.success({
-                //@ts-ignore
-                description: `Success: ${res.data.countSuccess}, Error: ${res.data.countError}`,
-                message: "Upload thành công",
-            });
-            setDataExcel([]);
-            setOpenModalImport(false);
-            props.fetchData();
-        } else {
+            const res = await props.apiFunction(payload);
+
+            const success = res?.data?.countSuccess ?? 0;
+            const error = res?.data?.countError ?? 0;
+            const skipped = res?.data?.skipped ?? [];
+
+            if (success > 0) {
+                notification.success({
+                    message: "Upload thành công",
+                    description: `Success: ${success}, Error: ${error}`,
+                });
+
+                setDataExcel([]);
+                setOpenModalImport(false);
+                props.fetchData();
+            } else if (error > 0 && skipped.length > 0) {
+                notification.error({
+                    message: "Import thất bại",
+                    description: skipped[0].reason,
+                });
+            } else {
+                notification.error({
+                    message: "Đã có lỗi xảy ra",
+                    description: res?.message ?? "Unknown error",
+                });
+            }
+        } catch (err: any) {
             notification.error({
-                description: res.message,
+                description: err?.message ?? "Submit failed",
                 message: "Đã có lỗi xảy ra",
             });
         }
     };
 
+    // ✅ columns theo dataMapping
     const columns = props.headers.map((header, index) => ({
         title: header,
-        dataIndex: props.dataMapping[index],
+        dataIndex: props.dataMapping[index] as string,
     }));
+
+    const rowKey =
+        props.rowKey ??
+        ((record: T) =>
+            String(
+                (record as any).id ?? (record as any).email ?? Math.random(),
+            ));
 
     return (
         <Modal
-            title="Import data user"
+            title={props.uploadTitle ?? "Import data"}
             width={"50vw"}
             open={openModalImport}
             onOk={handleSubmit}
@@ -116,9 +130,7 @@ const ImportExcelData: React.FC<IDataImportProps> = (props) => {
                 setDataExcel([]);
             }}
             okText="Import data"
-            okButtonProps={{
-                disabled: dataExcel.length < 1,
-            }}
+            okButtonProps={{ disabled: dataExcel.length < 1 }}
             maskClosable={false}
         >
             <Dragger {...propsUpload} showUploadList={dataExcel.length > 0}>
@@ -129,8 +141,8 @@ const ImportExcelData: React.FC<IDataImportProps> = (props) => {
                     Click or drag file to this area to upload
                 </p>
                 <p className="ant-upload-hint">
-                    Support for a single upload. Only accept .csv, .xls, .xlsx .
-                    or &nbsp;
+                    Support for a single upload. Only accept .csv, .xls, .xlsx
+                    or{" "}
                     <a
                         onClick={(e) => e.stopPropagation()}
                         href={props.templateFileUrl}
@@ -140,12 +152,13 @@ const ImportExcelData: React.FC<IDataImportProps> = (props) => {
                     </a>
                 </p>
             </Dragger>
+
             <div style={{ paddingTop: 20 }}>
                 <Table
                     dataSource={dataExcel}
-                    rowKey="email"
+                    rowKey={rowKey as any}
                     title={() => <span>Dữ liệu upload:</span>}
-                    columns={columns}
+                    columns={columns as any}
                 />
             </div>
         </Modal>

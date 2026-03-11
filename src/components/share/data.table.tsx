@@ -12,7 +12,6 @@ type DataTableProps<
     U extends ParamsType = ParamsType,
     ValueType = "text",
 > = ProTableProps<T, U, ValueType> & {
-    /** optional default id key */
     rowKey?: keyof T | ((record: T) => Key);
 };
 
@@ -38,6 +37,7 @@ const DataTable = <
     actionRef,
     dateFormatter = "string",
     rowSelection,
+    options = {},
 }: DataTableProps<T, U, ValueType>) => {
     return (
         <ConfigProvider locale={vi_VN}>
@@ -53,13 +53,21 @@ const DataTable = <
                 scroll={scroll}
                 params={params}
                 request={request}
-                search={search}
                 polling={polling}
                 toolBarRender={toolBarRender}
                 headerTitle={headerTitle}
                 actionRef={actionRef}
                 dateFormatter={dateFormatter}
                 rowSelection={rowSelection}
+                options={options}
+                search={
+                    search ?? {
+                        layout: "vertical",
+                        defaultCollapsed: false,
+                        span: 6,
+                        labelWidth: 55,
+                    }
+                }
             />
         </ConfigProvider>
     );
