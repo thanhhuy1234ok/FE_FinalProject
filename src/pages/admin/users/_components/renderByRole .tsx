@@ -2,7 +2,7 @@ import { DebounceSelect } from "@/components/share/debouce.select";
 import { ProForm, ProFormSelect } from "@ant-design/pro-components";
 import { Col } from "antd";
 import type { FormInstance } from "antd/es/form";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { getSubjectsAPI } from "@/services/api";
 import useUserHooks from "../_hooks/user.hook";
 import useStudentFormOptions from "../_hooks/useStudentFormOptions";
@@ -12,14 +12,6 @@ const RenderByRole = () => {
         useUserHooks();
 
     const form = ProForm.useFormInstance();
-    const ALL_VALUE = "__all__";
-
-    const [subjectOptions, setSubjectOptions] = useState<
-        { label: string; value: string | number }[]
-    >([]);
-    const [selectedSubjects, setSelectedSubjects] = useState<
-        { label: string; value: string | number }[]
-    >([]);
     const {
         selectedYear,
         selectedMajor,
