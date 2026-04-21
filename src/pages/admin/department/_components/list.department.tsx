@@ -29,11 +29,12 @@ const ListDepartment = () => {
     };
     const columns: ProColumns<IDepartment>[] = [
         {
-            title: "ID",
-            render: (_text, _record, index) => {
-                return <>{index + 1}</>;
-            },
-            hideInSearch: true,
+            title: "STT",
+            dataIndex: "id",
+            width: 70,
+            render: (_, __, index) =>
+                (meta.current - 1) * meta.pageSize + index + 1,
+            search: false,
         },
         {
             key: "name",

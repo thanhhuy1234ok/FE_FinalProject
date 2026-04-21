@@ -23,6 +23,12 @@ declare global {
         data?: T;
     }
 
+    interface IBackendError {
+        error?: string | string[];
+        message: string;
+        statusCode: number | string;
+    }
+
     interface IModelPaginate<T> {
         meta: {
             current: number;
@@ -68,6 +74,8 @@ declare global {
         specialization?: string;
         degree?: string;
         msgv?: string;
+        department?: IDepartment;
+        user?: IUserDetail;
     }
 
     interface IStudentProfile {
@@ -127,6 +135,14 @@ declare global {
         isActive: boolean;
     }
 
+    interface ITeacherSubject extends IBaseEntity {
+        teacherId: string;
+        subjectId: number;
+
+        teacher?: ITeacherProfile;
+        subject?: ISubject;
+    }
+
     /* ===============================
        CAMPUS / BUILDING / ROOM
     ================================= */
@@ -149,6 +165,7 @@ declare global {
         name: string;
         code: string;
         building_id: number;
+        capacity: number;
         building: IBuilding;
         isActive: boolean;
     }
@@ -157,11 +174,11 @@ declare global {
        TERM (Academic Term)
     ================================= */
     interface ITerm extends IBaseEntity {
-        name: string;
-        code: string;
-        startDate: string;
-        endDate: string;
-        isActive: boolean;
+        year: number;
+        semester: "HK1" | "HK2" | "SUMMER";
+        isActive?: boolean;
+        startDate?: string;
+        endDate?: string;
     }
 
     /* ===============================
@@ -245,17 +262,18 @@ declare global {
         key?: string;
     }
 
-    interface IUserExcel {
+    interface IStudentExcel {
         name: string;
         email: string;
-        role: string;
-        major: string;
-        class: string;
-        yearOfAdmission: number;
+        gender: string;
+        phone: string;
+        majorName: string;
+        className: string;
+        yearAdmission: number | string;
         password?: string;
     }
 
-    export interface ICurSubExcel {
+    interface ICurSubExcel {
         curriculumId: number | string;
         subjectId: number | string;
         semesterNumber: number | string;
@@ -264,7 +282,7 @@ declare global {
         prerequisiteRule?: string | null;
     }
 
-    export interface ICurSubExcelByName {
+    interface ICurSubExcelByName {
         curriculumName: string;
         subjectName: string;
         semesterNumber: number | string;
@@ -273,7 +291,7 @@ declare global {
         prerequisiteRule?: string | null;
     }
 
-    export interface ImportCurriculumSubjectPayload {
+    interface ImportCurriculumSubjectPayload {
         items: {
             curriculumId: number;
             subjectId: number;
@@ -284,20 +302,9 @@ declare global {
         }[];
     }
 
-    export interface ImportCurriculumSubjectByNamePayload {
+    interface ImportCurriculumSubjectByNamePayload {
         items: ICurSubExcelByName[];
     }
-
-    // interface IDataImportProps<T> {
-    //     setOpenModalImport: (open: boolean) => void;
-    //     openModalImport: boolean;
-    //     fetchData: () => void;
-    //     headers: string[];
-    //     dataMapping: (keyof T)[]; // mapping theo type mới
-    //     templateFileUrl: string;
-    //     uploadTitle?: string;
-    //     apiFunction: (data: T[]) => Promise<any>; // <-- dùng T thay vì IExcelData
-    // }
 
     interface IDataImportProps<T extends Record<string, any>> {
         setOpenModalImport: (open: boolean) => void;
@@ -327,6 +334,8 @@ declare global {
         description?: string;
         isActive: boolean;
         facultyId: number;
+        teacherCount: number;
+        studentCount: number;
     }
     /* ===============================
        Faculty
@@ -335,6 +344,134 @@ declare global {
         name: string;
         code: string;
         isActive: boolean;
+    }
+
+    interface IAdminClass extends IBaseEntity {
+        name: string;
+        code?: string;
+    }
+
+    interface ICourseOffering {
+        id: number;
+        maxStudents?: number;
+        enrolledCount?: number;
+        isActive: boolean;
+
+        adminClassId: number | null;
+        adminClass: IAdminClass | null;
+
+        teacherSubjectId: number;
+        teacherSubject: ITeacherSubject;
+
+        termId: number;
+        term: ITerm;
+
+        createdAt?: string;
+        updatedAt?: string;
+        deletedAt?: string | null;
+    }
+
+    interface ISchedule {
+        id: number;
+        dayOfWeek: number;
+        lessonStart: number;
+        lessonEnd: number;
+        isActive: boolean;
+        room?: IRoom;
+        courseOffering?: ICourseOffering;
+    }
+
+    export type TPaymentStatus = "PENDING" | "PAID" | "OVERDUE" | "CANCELLED";
+    export type TPaymentItemStatus = "ACTIVE" | "CANCELLED";
+    export type TPaymentMethod = "CASH" | "BANK_TRANSFER" | "MOMO";
+
+    interface IPaymentSubject {
+        id: number;
+        name: string;
+        code: string;
+        credits: number;
+    }
+
+    interface IPaymentTeacherUser {
+        id: string;
+        name: string;
+        email: string;
+    }
+
+    interface IPaymentTeacher {
+        id: number;
+        user: IPaymentTeacherUser;
+    }
+
+    interface IPaymentTeacherSubject {
+        id: number;
+        subject: IPaymentSubject;
+        teacher: IPaymentTeacher;
+    }
+
+    interface IPaymentAdminClass {
+        id: number;
+        code: string;
+        name: string;
+    }
+
+    interface IPaymentCourseOffering {
+        id: number;
+        code: string;
+        adminClass?: IPaymentAdminClass;
+        teacherSubject: IPaymentTeacherSubject;
+    }
+
+    interface IPaymentRegistration {
+        id: number;
+        status: string;
+    }
+
+    interface IPaymentItem {
+        id: number;
+        credits: number;
+        unitPrice: number;
+        amount: number;
+        status: TPaymentItemStatus;
+        registration: IPaymentRegistration;
+        courseOffering: IPaymentCourseOffering;
+    }
+
+    interface IPaymentTerm {
+        id: number;
+        year: number;
+        semester: string;
+        startDate?: string;
+        endDate?: string;
+    }
+
+    interface IPaymentStudentUser {
+        id: string;
+        name: string;
+        email: string;
+    }
+
+    interface IPaymentStudent {
+        id: number;
+        code?: string;
+        user: IPaymentStudentUser;
+    }
+
+    interface IPayment {
+        id: number;
+        code: string;
+        totalCredits: number;
+        totalAmount: number;
+        status: TPaymentStatus;
+        dueDate: string | null;
+        paidAt: string | null;
+        paymentMethod: TPaymentMethod | null;
+        note: string | null;
+        createdAt?: string;
+        updatedAt?: string;
+        student: IPaymentStudent;
+        term: IPaymentTerm;
+        items: IPaymentItem[];
     }
 }
 

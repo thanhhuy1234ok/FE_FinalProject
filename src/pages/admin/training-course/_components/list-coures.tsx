@@ -21,6 +21,7 @@ import {
     createBulkCurriculumSubjectNameAPI,
     getCurriculumSubjectAPI,
 } from "@/services/api";
+import ModalCourseCTDT from "./modal-couse-ctđt";
 
 const { Text } = Typography;
 
@@ -518,7 +519,6 @@ const ListCourse = () => {
             />
             */}
 
-            {/*
             <ModalCourseCTDT
                 open={openCurriculumModal}
                 onClose={() => setOpenCurriculumModal(false)}
@@ -527,7 +527,6 @@ const ListCourse = () => {
                 defaultYearOfAdmissionId={defaultYearOfAdmissionId}
                 onCreated={handleReloadAll}
             />
-            */}
         </div>
     );
 };

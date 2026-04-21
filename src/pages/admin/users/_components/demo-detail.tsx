@@ -242,8 +242,9 @@ export default function UserDetailPage() {
                                     {/* <Descriptions.Item label="Khoa / Bộ môn">
                                         {data.teacher?.faculty?.name || "N/A"}
                                     </Descriptions.Item> */}
-                                    <Descriptions.Item label="Chuyên ngành">
-                                        {data.teacher?.specialization || "N/A"}
+                                    <Descriptions.Item label="Bộ môn">
+                                        {data.teacher?.department?.name ||
+                                            "N/A"}
                                     </Descriptions.Item>
                                     <Descriptions.Item label="Học vị">
                                         {data.teacher?.degree || "N/A"}
@@ -265,9 +266,9 @@ export default function UserDetailPage() {
                                     <Descriptions.Item label="Chuyên Ngành">
                                         {data.student?.major?.name || "N/A"}
                                     </Descriptions.Item>
-                                    <Descriptions.Item label="Lớp hành chính">
+                                    <Descriptions.Item label="Lớp">
                                         {data.student?.adminClass
-                                            ? `${data.student.adminClass.code}${data.student.adminClass.name ? ` - ${data.student.adminClass.name}` : ""}`
+                                            ? `${data.student.adminClass.name}`
                                             : "N/A"}
                                     </Descriptions.Item>
                                 </Descriptions>

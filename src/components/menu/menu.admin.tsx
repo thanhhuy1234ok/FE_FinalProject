@@ -55,21 +55,11 @@ export const adminMenuItems: MenuItem[] = [
                 icon: <ExceptionOutlined />,
             },
 
-            // {
-            //     label: <Link to="/manage-curriculum/semester">Kỳ học</Link>,
-            //     key: "/manage-curriculum/semester",
-            //     icon: <ExceptionOutlined />,
-            // },
-            // {
-            //     label: <Link to="/manage-curriculum/curriculum">Lộ trình học chuyên nghành</Link>,
-            //     key: "/manage-curriculum/curriculum",
-            //     icon: <ExceptionOutlined />,
-            // },
-            // {
-            //     label: <Link to="/manage-curriculum/subject">Môn học</Link>,
-            //     key: "/manage-curriculum/subject",
-            //     icon: <ExceptionOutlined />,
-            // },
+            {
+                label: <Link to="/manage-curriculum/subject">Môn học</Link>,
+                key: "/manage-curriculum/subject",
+                icon: <ExceptionOutlined />,
+            },
         ],
     },
     {
@@ -77,6 +67,20 @@ export const adminMenuItems: MenuItem[] = [
         key: "/manage-subject",
         icon: <ExceptionOutlined />,
         children: [
+            {
+                label: <Link to="/manage-subject/term">Học kỳ</Link>,
+                key: "/manage-subject/term",
+                icon: <ExceptionOutlined />,
+            },
+            {
+                label: (
+                    <Link to="/manage-subject/course-offering">
+                        Lớp học phần
+                    </Link>
+                ),
+                key: "/manage-subject/course-offering",
+                icon: <ExceptionOutlined />,
+            },
             {
                 label: <Link to="/manage-subject/class">Lớp học</Link>,
                 key: "/manage-subject/class",

@@ -12,6 +12,7 @@ import { buildQuery } from "@/helper/buildQuery";
 import ButtonComponents from "@/components/share/button";
 import RenderHeaderTable from "@/components/share/header.table";
 import ModalMajor from "./modal";
+import { useNavigate } from "react-router-dom";
 
 const ListMajor = () => {
     const tableRef = useRef<ActionType>();
@@ -22,6 +23,7 @@ const ListMajor = () => {
         pages: 0,
         total: 0,
     });
+    const navigate = useNavigate();
     const columns: ProColumns<IMajor>[] = [
         {
             title: "STT",
@@ -65,7 +67,12 @@ const ListMajor = () => {
             render: (_, record) => {
                 return (
                     <Space>
-                        <ButtonComponents title="Xem chi tiết" />
+                        <ButtonComponents
+                            title="Xem chi tiết"
+                            onClick={() => {
+                                navigate(`${+record.id}`);
+                            }}
+                        />
                     </Space>
                 );
             },
@@ -77,7 +84,7 @@ const ListMajor = () => {
         <>
             <DataTable<IMajor>
                 actionRef={tableRef}
-                headerTitle="Major List"
+                headerTitle="Danh sách chuyên ngành"
                 rowKey="id"
                 columns={columns}
                 request={async (params, sort, filter) => {

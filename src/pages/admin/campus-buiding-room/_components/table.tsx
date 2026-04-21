@@ -68,6 +68,7 @@ const TableCampusBuildingRoom = () => {
                     <ButtonComponents
                         icon={<PlusOutlined />}
                         onClick={() => {
+                            console.log(entity.id);
                             handleViewDetail(+entity.id);
                         }}
                         title="Xem chi tiết cơ sở"
@@ -90,10 +91,7 @@ const TableCampusBuildingRoom = () => {
                     // ✅ build query = params + sort + filter
                     const qs = buildQuery(params, sort, filter);
                     const res = await getCampusAPI(qs);
-                    console.log(
-                        "🚀 ~ file: table.tsx:143 ~ request={async ~ res:",
-                        res,
-                    );
+
                     const result: ICampus[] = res?.data?.result ?? [];
                     const nextMeta = res?.data?.meta ?? {
                         current: params.current ?? 1,

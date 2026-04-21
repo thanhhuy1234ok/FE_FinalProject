@@ -20,6 +20,7 @@ export const USER_API = {
     DETAIL: (id: string | number) => `${API_BASE}/users/${id}`,
     UPDATE: (id: string | number) => `${API_BASE}/users/${id}`,
     DELETE: (id: string | number) => `${API_BASE}/users/${id}`,
+    LIST_TEACHER: (query: string) => `${API_BASE}/users/teachers?${query}`,
 };
 
 export const ROLES_API = {
@@ -63,6 +64,7 @@ export const CAPUS_BUILDING_ROOM_API = {
 
     CREATE_BUILDING: (CampusId: string | number) =>
         `${API_BASE}/campus/${CampusId}/buildings`,
+    LIST_BUILDING: (query: string) => `${API_BASE}/building?${query}`,
 };
 
 export const TERMS_API = {
@@ -70,6 +72,7 @@ export const TERMS_API = {
     CREATE: `${API_BASE}/terms`,
     DETAIL: (id: string | number) => `${API_BASE}/terms/${id}`,
     DELETE: (id: string | number) => `${API_BASE}/terms/${id}`,
+    IS_ACTIVE: (id: number) => `/api/v1/terms/${id}/activate`,
 };
 
 export const Curriculum_API = {
@@ -88,6 +91,7 @@ export const CURRICULUM_SUBJECT_API = {
 
 export const SUBJECT_API = {
     LIST: (query: string) => `${API_BASE}/subjects?${query}`,
+    CREATE: `${API_BASE}/subjects`,
 };
 
 export const DEPARTMENT_API = {
@@ -102,4 +106,12 @@ export const FACULTY_API = {
     CREATE: `${API_BASE}/faculty`,
     DETAIL: (id: number) => `${API_BASE}/faculty/${id}`,
     DELETE: (id: string | number) => `${API_BASE}/faculty/${id}`,
+    COUNT_FACULTY: (id: number) => `${API_BASE}/faculty/${id}/stats`,
+};
+
+export const COURSE_OFF_API = {
+    LIST: (query: string) => `${API_BASE}/course-offering?${query}`,
+    CREATE: `${API_BASE}/course-offering`,
+    DETAIL: (id: number) => `${API_BASE}/course-offering/${id}`,
+    DELETE: (id: string | number) => `${API_BASE}/course-offering/${id}`,
 };

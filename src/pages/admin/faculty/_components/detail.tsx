@@ -8,18 +8,46 @@ import {
     Empty,
     Space,
     Spin,
+    Statistic,
     Tag,
     Typography,
+    Row,
+    Col,
+    Tabs,
     message,
 } from "antd";
-import { ArrowLeftOutlined } from "@ant-design/icons";
+import {
+    ArrowLeftOutlined,
+    TeamOutlined,
+    UserOutlined,
+} from "@ant-design/icons";
 import { PageContainer } from "@ant-design/pro-components";
 import type { ActionType, ProColumns } from "@ant-design/pro-components";
-import { detailFacultyAPI, getDepartmentsAPI } from "@/services/api";
+import {
+    countFacultyAPI,
+    detailFacultyAPI,
+    getDepartmentsAPI,
+    getListTeacherAPI,
+} from "@/services/api";
 import DataTable from "@/components/share/data.table";
 import { buildQuery } from "@/helper/buildQuery";
+import CountUp from "react-countup";
 
 const { Title, Text } = Typography;
+
+interface IFacultyStats {
+    id: number;
+    departmentCount: number;
+    teacherCount: number;
+    studentCount: number;
+}
+
+const defaultStats: IFacultyStats = {
+    id: 0,
+    departmentCount: 0,
+    teacherCount: 0,
+    studentCount: 0,
+};
 
 const FacultyDetailPage = () => {
     const navigate = useNavigate();
@@ -27,33 +55,68 @@ const FacultyDetailPage = () => {
 
     const facultyId = useMemo(() => Number(id || 0), [id]);
     const departmentTableRef = useRef<ActionType | null>(null);
+    const teacherTableRef = useRef<ActionType | null>(null);
 
     const [loading, setLoading] = useState(true);
     const [faculty, setFaculty] = useState<IFaculty | null>(null);
+    const [stats, setStats] = useState<IFacultyStats>(defaultStats);
 
     const fetchDetail = useCallback(async () => {
         if (!facultyId) {
             setFaculty(null);
+            return;
+        }
+
+        const res = await detailFacultyAPI(facultyId);
+        setFaculty(res?.data ?? null);
+    }, [facultyId]);
+
+    const fetchStats = useCallback(async () => {
+        if (!facultyId) {
+            setStats(defaultStats);
+            return;
+        }
+
+        const res = await countFacultyAPI(facultyId);
+        setStats(
+            res?.data.result ?? {
+                ...defaultStats,
+                id: facultyId,
+            },
+        );
+    }, [facultyId]);
+
+    const fetchPageData = useCallback(async () => {
+        if (!facultyId) {
+            setFaculty(null);
+            setStats(defaultStats);
             setLoading(false);
             return;
         }
 
         try {
             setLoading(true);
-            const res = await detailFacultyAPI(facultyId);
-            setFaculty(res?.data ?? null);
-        } catch (err) {
-            console.log(err);
+            await Promise.all([fetchDetail(), fetchStats()]);
+        } catch (error) {
+            console.error(error);
             message.error("Không tải được chi tiết khoa!");
             setFaculty(null);
+            setStats({
+                ...defaultStats,
+                id: facultyId,
+            });
         } finally {
             setLoading(false);
         }
-    }, [facultyId]);
+    }, [facultyId, fetchDetail, fetchStats]);
 
     useEffect(() => {
-        fetchDetail();
-    }, [fetchDetail]);
+        fetchPageData();
+    }, [fetchPageData]);
+
+    const formatter = (value: number | string) => {
+        return <CountUp end={Number(value)} separator="," />;
+    };
 
     const departmentColumns: ProColumns<IDepartment>[] = [
         {
@@ -74,6 +137,24 @@ const FacultyDetailPage = () => {
             ellipsis: true,
         },
         {
+            title: "Số giảng viên",
+            dataIndex: "teacherCount",
+            width: 140,
+            align: "center",
+            render: (_, record) => (
+                <Tag color="blue">{record?.teacherCount ?? 0}</Tag>
+            ),
+        },
+        {
+            title: "Số học viên",
+            dataIndex: "studentCount",
+            width: 140,
+            align: "center",
+            render: (_, record) => (
+                <Tag color="purple">{record.studentCount ?? 0}</Tag>
+            ),
+        },
+        {
             title: "Mô tả",
             dataIndex: "description",
             ellipsis: true,
@@ -92,6 +173,61 @@ const FacultyDetailPage = () => {
         },
     ];
 
+    const teacherColumns: ProColumns<ITeacherProfile>[] = [
+        {
+            title: "#",
+            valueType: "indexBorder",
+            width: 48,
+        },
+        {
+            title: "Mã GV",
+            dataIndex: "msgv",
+            width: 120,
+            render: (value) =>
+                value ? <Tag color="processing">{value}</Tag> : "N/A",
+        },
+        {
+            title: "Họ tên",
+            dataIndex: ["user", "name"],
+            ellipsis: true,
+            render: (value) => value || "N/A",
+        },
+        {
+            title: "Email",
+            dataIndex: ["user", "email"],
+            ellipsis: true,
+            render: (value) => value || "N/A",
+        },
+        {
+            title: "Bộ môn",
+            key: "department",
+            render: (_, record) => record?.department?.name || "N/A",
+        },
+        {
+            title: "Chuyên môn",
+            dataIndex: "specialization",
+            ellipsis: true,
+            render: (value) => value || "N/A",
+        },
+        {
+            title: "Trình độ",
+            dataIndex: "degree",
+            width: 140,
+            render: (value) => value || "N/A",
+        },
+        {
+            title: "Trạng thái",
+            key: "isActive",
+            width: 120,
+            render: (_, record) =>
+                record?.user?.isActive ? (
+                    <Tag color="green">Hoạt động</Tag>
+                ) : (
+                    <Tag>Tạm ngưng</Tag>
+                ),
+        },
+    ];
+
     return (
         <PageContainer
             title={`Chi tiết ${faculty?.name ?? "khoa"}`}
@@ -99,8 +235,9 @@ const FacultyDetailPage = () => {
                 <Button
                     key="reload"
                     onClick={() => {
-                        fetchDetail();
+                        fetchPageData();
                         departmentTableRef.current?.reload();
+                        teacherTableRef.current?.reload();
                     }}
                 >
                     Tải lại
@@ -172,63 +309,162 @@ const FacultyDetailPage = () => {
                                     : "N/A"}
                             </Descriptions.Item>
                         </Descriptions>
+
+                        <Row gutter={16} style={{ marginTop: 16 }}>
+                            <Col xs={24} sm={12} md={8}>
+                                <Card>
+                                    <Statistic
+                                        title="Tổng số bộ môn"
+                                        value={stats.departmentCount}
+                                        prefix={<TeamOutlined />}
+                                        formatter={formatter}
+                                    />
+                                </Card>
+                            </Col>
+                            <Col xs={24} sm={12} md={8}>
+                                <Card>
+                                    <Statistic
+                                        title="Tổng số giảng viên"
+                                        value={stats.teacherCount}
+                                        prefix={<UserOutlined />}
+                                        formatter={formatter}
+                                    />
+                                </Card>
+                            </Col>
+                            <Col xs={24} sm={12} md={8}>
+                                <Card>
+                                    <Statistic
+                                        title="Tổng số học viên"
+                                        value={stats.studentCount}
+                                        prefix={<TeamOutlined />}
+                                        formatter={formatter}
+                                    />
+                                </Card>
+                            </Col>
+                        </Row>
                     </>
                 )}
             </Card>
 
             <Card>
-                <Title level={5} style={{ marginTop: 0 }}>
-                    Chi tiết bộ môn
-                </Title>
+                <Tabs
+                    defaultActiveKey="departments"
+                    items={[
+                        {
+                            key: "departments",
+                            label: "Bộ môn",
+                            children: (
+                                <DataTable<IDepartment>
+                                    actionRef={departmentTableRef}
+                                    rowKey="id"
+                                    columns={departmentColumns}
+                                    search={false}
+                                    options={false}
+                                    pagination={{
+                                        pageSize: 10,
+                                        showSizeChanger: true,
+                                    }}
+                                    request={async (params, sort, filter) => {
+                                        const qs = buildQuery(
+                                            {
+                                                ...params,
+                                                facultyId: facultyId,
+                                            },
+                                            sort,
+                                            filter,
+                                        );
 
-                <DataTable<IDepartment>
-                    actionRef={departmentTableRef}
-                    rowKey="id"
-                    columns={departmentColumns}
-                    search={false}
-                    options={false}
-                    pagination={{
-                        pageSize: 10,
-                        showSizeChanger: true,
-                    }}
-                    request={async (params, sort, filter) => {
-                        const qs = buildQuery(
-                            {
-                                ...params,
-                                facultyId,
-                            },
-                            sort,
-                            filter,
-                        );
+                                        const res = await getDepartmentsAPI(qs);
+                                        const result: IDepartment[] =
+                                            res?.data?.result ?? [];
 
-                        const res = await getDepartmentsAPI(qs);
+                                        const nextMeta = res?.data?.meta ?? {
+                                            current: params.current ?? 1,
+                                            pageSize: params.pageSize ?? 10,
+                                            pages: 0,
+                                            total: result.length,
+                                        };
 
-                        const result: IDepartment[] = res?.data?.result ?? [];
-                        const nextMeta = res?.data?.meta ?? {
-                            current: params.current ?? 1,
-                            pageSize: params.pageSize ?? 10,
-                            pages: 0,
-                            total: result.length,
-                        };
+                                        return {
+                                            data: result,
+                                            success: true,
+                                            total:
+                                                nextMeta.total ?? result.length,
+                                        };
+                                    }}
+                                    locale={{
+                                        emptyText: (
+                                            <div
+                                                style={{
+                                                    padding: 24,
+                                                    textAlign: "center",
+                                                }}
+                                            >
+                                                <Empty description="Khoa này chưa có bộ môn" />
+                                            </div>
+                                        ),
+                                    }}
+                                />
+                            ),
+                        },
+                        {
+                            key: "teachers",
+                            label: "Giảng viên",
+                            children: (
+                                <DataTable<ITeacherProfile>
+                                    actionRef={teacherTableRef}
+                                    rowKey="id"
+                                    columns={teacherColumns}
+                                    search={false}
+                                    options={false}
+                                    pagination={{
+                                        pageSize: 10,
+                                        showSizeChanger: true,
+                                    }}
+                                    request={async (params, sort, filter) => {
+                                        const qs = buildQuery(
+                                            {
+                                                ...params,
+                                                facultyId: facultyId,
+                                            },
+                                            sort,
+                                            filter,
+                                        );
 
-                        return {
-                            data: result,
-                            success: true,
-                            total: nextMeta.total ?? result.length,
-                        };
-                    }}
-                    locale={{
-                        emptyText: (
-                            <div
-                                style={{
-                                    padding: 24,
-                                    textAlign: "center",
-                                }}
-                            >
-                                <Empty description="Khoa này chưa có bộ môn" />
-                            </div>
-                        ),
-                    }}
+                                        const res = await getListTeacherAPI(qs);
+                                        const result: ITeacherProfile[] =
+                                            res?.data?.result ?? [];
+
+                                        const nextMeta = res?.data?.meta ?? {
+                                            current: params.current ?? 1,
+                                            pageSize: params.pageSize ?? 10,
+                                            pages: 0,
+                                            total: result.length,
+                                        };
+
+                                        return {
+                                            data: result,
+                                            success: true,
+                                            total:
+                                                nextMeta.total ?? result.length,
+                                        };
+                                    }}
+                                    locale={{
+                                        emptyText: (
+                                            <div
+                                                style={{
+                                                    padding: 24,
+                                                    textAlign: "center",
+                                                }}
+                                            >
+                                                <Empty description="Khoa này chưa có giảng viên" />
+                                            </div>
+                                        ),
+                                    }}
+                                />
+                            ),
+                        },
+                    ]}
                 />
             </Card>
         </PageContainer>

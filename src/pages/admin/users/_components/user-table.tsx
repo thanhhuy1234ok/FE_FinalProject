@@ -6,11 +6,11 @@ import {
     Badge,
     Dropdown,
     Grid,
-    Popconfirm,
     Space,
     Tag,
     Tooltip,
     Typography,
+    Button,
 } from "antd";
 import { useMemo, useState } from "react";
 import "@/styles/user.table.scss";
@@ -19,15 +19,13 @@ import RenderHeaderTable from "@/components/share/header.table";
 import UserModal from "./user-modal";
 import userHooks from "../_hooks/user.hook";
 import {
-    DeleteOutlined,
     EditOutlined,
     EllipsisOutlined,
+    UserOutlined,
 } from "@ant-design/icons";
 import { ROLE_MAP } from "@/types/constans";
-import UserProfileDrawer from "./user-detail";
 import ImportExcelData from "@/components/share/data-import/import.data";
 import templateFile from "@/components/share/data-import/template.xlsx?url";
-import ButtonComponents from "@/components/share/button";
 import { useNavigate } from "react-router-dom";
 
 const { Text } = Typography;
@@ -36,8 +34,6 @@ const { useBreakpoint } = Grid;
 const UserTable = () => {
     const [openModal, setOpenModal] = useState<boolean>(false);
     const { roles, handleDeleteUser, tableRef } = userHooks();
-    const [openViewDetail, setOpenViewDetail] = useState<boolean>(false);
-    const [dataInit, setDataInit] = useState<IUserDetail | null>(null);
     const [openModalImport, setOpenModalImport] = useState(false);
     const [dataUpdate, setDataUpdate] = useState<IUserDetail | null>(null);
     const [meta, setMeta] = useState({
@@ -59,37 +55,40 @@ const UserTable = () => {
     const columns: ProColumns<IUserDetail>[] = useMemo(
         () => [
             {
-                title: "ID",
-                key: "index",
+                title: "STT",
+                dataIndex: "id",
                 width: 70,
                 align: "center",
-                render: (_text, _record, index) => <>{index + 1}</>,
-                hideInSearch: true,
+                search: false,
+                render: (_, __, index) =>
+                    (meta.current - 1) * meta.pageSize + index + 1,
             },
             {
                 title: "Name",
                 dataIndex: "name",
-                width: isMobile ? 150 : 180,
+                width: isMobile ? 150 : 190,
                 ellipsis: true,
-                render: (_text, record) => {
-                    return (
+                sorter: true,
+                render: (_text, record) => (
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            minHeight: 36,
+                        }}
+                    >
                         <Text
                             ellipsis={{ tooltip: record.name }}
                             style={{
-                                cursor: "pointer",
                                 maxWidth: "100%",
                                 display: "inline-block",
-                            }}
-                            onClick={() => {
-                                setOpenViewDetail(true);
-                                setDataInit(record);
+                                fontWeight: 500,
                             }}
                         >
                             {record.name}
                         </Text>
-                    );
-                },
-                sorter: true,
+                    </div>
+                ),
             },
             {
                 title: "Email",
@@ -98,12 +97,24 @@ const UserTable = () => {
                 ellipsis: true,
                 sorter: true,
                 render: (value) => (
-                    <Text
-                        ellipsis={{ tooltip: value }}
-                        style={{ maxWidth: "100%", display: "inline-block" }}
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            minHeight: 36,
+                        }}
                     >
-                        {value}
-                    </Text>
+                        <Text
+                            ellipsis={{ tooltip: value }}
+                            style={{
+                                maxWidth: "100%",
+                                display: "inline-block",
+                                color: "#595959",
+                            }}
+                        >
+                            {value}
+                        </Text>
+                    </div>
                 ),
             },
             {
@@ -111,9 +122,20 @@ const UserTable = () => {
                 dataIndex: "role",
                 key: "role",
                 width: 140,
+                align: "center",
                 onFilter: (value, record) =>
                     record.role?.name !== "ADMIN" &&
                     record.role?.name === value,
+                filters:
+                    roles
+                        ?.filter((r) => r.name !== "ADMIN")
+                        .map((r) => ({
+                            text: ROLE_MAP[r.name]?.label ?? r.name, // hiển thị tiếng Việt
+                            value: r.name, // giữ value tiếng Anh để filter
+                        })) ?? [],
+                filterMultiple: false,
+                filterSearch: true,
+                hideInSearch: true,
                 render: (_text, record) => {
                     if (record.role?.name === "ADMIN") return null;
 
@@ -122,85 +144,101 @@ const UserTable = () => {
 
                     return (
                         <Tooltip title={roleLabel}>
-                            <Text ellipsis style={{ maxWidth: 120 }}>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    minHeight: 36,
+                                }}
+                            >
                                 {record.role?.name === "TEACHER" ? (
-                                    <Tag color="gold">Giáo viên</Tag>
+                                    <Tag
+                                        color="gold"
+                                        style={{ marginInlineEnd: 0 }}
+                                    >
+                                        Giáo viên
+                                    </Tag>
                                 ) : record.role?.name === "STUDENT" ? (
-                                    <Tag color="blue">Học sinh</Tag>
+                                    <Tag
+                                        color="blue"
+                                        style={{ marginInlineEnd: 0 }}
+                                    >
+                                        Học sinh
+                                    </Tag>
                                 ) : (
-                                    "N/A"
+                                    <Text type="secondary">N/A</Text>
                                 )}
-                            </Text>
+                            </div>
                         </Tooltip>
                     );
                 },
-                filters:
-                    roles
-                        ?.filter((r) => r.name !== "ADMIN")
-                        .map((r) => ({
-                            text: r.name,
-                            value: r.name,
-                        })) ?? [],
-                filterMultiple: false,
-                filterSearch: true,
-                hideInSearch: true,
             },
             {
                 title: "Status",
                 dataIndex: "isActive",
                 key: "isActive",
                 width: isMobile ? 130 : 160,
+                align: "center",
                 filters: [
                     { text: "Đang hoạt động", value: true },
                     { text: "Đã khóa", value: false },
                 ],
                 filterMultiple: false,
                 onFilter: (value, record) => record.isActive === value,
-                render: (_, record) =>
-                    record.isActive ? (
-                        <Tag color="success">
-                            <Badge status="success" text="Đang hoạt động" />
-                        </Tag>
-                    ) : (
-                        <Tag color="default">
-                            <Badge status="default" text="Đã khóa" />
-                        </Tag>
-                    ),
                 hideInSearch: true,
+                render: (_, record) => (
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            minHeight: 36,
+                        }}
+                    >
+                        {record.isActive ? (
+                            <Tag color="success" style={{ marginInlineEnd: 0 }}>
+                                <Badge status="success" text="Đang hoạt động" />
+                            </Tag>
+                        ) : (
+                            <Tag color="default" style={{ marginInlineEnd: 0 }}>
+                                <Badge status="default" text="Đã khóa" />
+                            </Tag>
+                        )}
+                    </div>
+                ),
+            },
+            {
+                title: "Bộ môn",
+                key: "deparment",
+                hideInSearch: true,
+                dataIndex: "deparment",
+                align: "center",
+                width: isMobile ? 110 : 150,
+                fixed: isTablet ? undefined : "right",
+                // render: () => <Text type="secondary">{re}</Text>,
+                render: (_, record) => (
+                    <Text type="secondary">
+                        {record.teacher?.department?.name ?? "-"}
+                    </Text>
+                ),
             },
             {
                 title: "CreatedAt",
                 dataIndex: "createdAt",
-                width: 180,
+                width: 170,
                 sorter: true,
+                hideInSearch: true,
                 render: (_text, record) => (
-                    <Text>
-                        {dayjs(record.createdAt).format("DD-MM-YYYY HH:mm:ss")}
+                    <Text style={{ whiteSpace: "nowrap" }}>
+                        {dayjs(record.createdAt).format("DD-MM-YYYY HH:mm")}
                     </Text>
                 ),
-                hideInSearch: true,
-            },
-            {
-                title: "Detail",
-                key: "detail",
-                hideInSearch: true,
-                align: "center",
-                width: isMobile ? 110 : 150,
-                fixed: isTablet ? undefined : "right",
-                render: (_value, entity) => {
-                    return (
-                        <ButtonComponents
-                            title={isMobile ? "Chi tiết" : "Xem chi tiết"}
-                            key={entity.id}
-                            onClick={() => navigate(`${entity.id}`)}
-                        />
-                    );
-                },
             },
             {
                 title: "Actions",
                 hideInSearch: true,
-                width: 80,
+                width: 90,
                 key: "id",
                 align: "center",
                 fixed: isTablet ? undefined : "right",
@@ -209,7 +247,7 @@ const UserTable = () => {
                         {
                             key: "edit",
                             label: (
-                                <Space>
+                                <Space size={8}>
                                     <EditOutlined />
                                     Chỉnh sửa
                                 </Space>
@@ -221,35 +259,17 @@ const UserTable = () => {
                             },
                         },
                         {
-                            key: "delete",
-                            label: entity.isActive ? (
-                                <Popconfirm
-                                    title={`Xác nhận xóa người dùng ${entity.email}`}
-                                    onConfirm={() =>
-                                        handleDeleteUser(entity.id)
-                                    }
-                                    okText="Xác nhận"
-                                    cancelText="Hủy"
-                                >
-                                    <Space>
-                                        <DeleteOutlined
-                                            style={{ color: "#ff4d4f" }}
-                                        />
-                                        Xóa
-                                    </Space>
-                                </Popconfirm>
-                            ) : (
-                                <Space
-                                    style={{
-                                        color: "#bfbfbf",
-                                        cursor: "not-allowed",
-                                    }}
-                                >
-                                    <DeleteOutlined />
-                                    Xóa
+                            key: "detail",
+                            label: (
+                                <Space size={8}>
+                                    <UserOutlined />
+                                    Xem chi tiết
                                 </Space>
                             ),
                             disabled: !entity.isActive,
+                            onClick: () => {
+                                navigate(`${entity.id}`);
+                            },
                         },
                     ];
 
@@ -259,7 +279,7 @@ const UserTable = () => {
                                 display: "flex",
                                 justifyContent: "center",
                                 alignItems: "center",
-                                height: "100%",
+                                minHeight: 36,
                             }}
                         >
                             <Dropdown
@@ -267,12 +287,14 @@ const UserTable = () => {
                                 trigger={["click"]}
                                 placement="bottomRight"
                             >
-                                <EllipsisOutlined
-                                    style={{
-                                        fontSize: 20,
-                                        cursor: "pointer",
-                                        padding: 6,
-                                    }}
+                                <Button
+                                    type="text"
+                                    shape="circle"
+                                    icon={
+                                        <EllipsisOutlined
+                                            style={{ fontSize: 18 }}
+                                        />
+                                    }
                                 />
                             </Dropdown>
                         </div>
@@ -280,7 +302,15 @@ const UserTable = () => {
                 },
             },
         ],
-        [roles, isMobile, isTablet, navigate, handleDeleteUser],
+        [
+            roles,
+            isMobile,
+            isTablet,
+            navigate,
+            handleDeleteUser,
+            meta.current,
+            meta.pageSize,
+        ],
     );
 
     const reloadTable = () => {
@@ -358,31 +388,37 @@ const UserTable = () => {
                 setDataUpdate={setDataUpdate}
             />
 
-            <UserProfileDrawer
-                open={openViewDetail}
-                setOpen={setOpenViewDetail}
-                dataInit={dataInit}
-                setDataInit={setDataInit}
-            />
-
-            <ImportExcelData<IUserExcel>
+            <ImportExcelData<IStudentExcel>
                 openModalImport={openModalImport}
                 setOpenModalImport={setOpenModalImport}
                 fetchData={reloadTable}
-                headers={["Name", "Email", "Role", "Major", "Class", "Year"]}
+                headers={[
+                    "Tên sinh viên",
+                    "Email",
+                    "Giới tính",
+                    "Số điện thoại",
+                    "Chuyên ngành",
+                    "Năm nhập học",
+                    "Lớp học",
+                ]}
                 dataMapping={[
                     "name",
                     "email",
-                    "role",
-                    "major",
-                    "class",
-                    "yearOfAdmission",
+                    "gender",
+                    "phone",
+                    "majorName",
+                    "yearAdmission",
+                    "className",
                 ]}
                 templateFileUrl={templateFile}
                 apiFunction={callBulkCreateUser}
                 rowKey="email"
                 transformData={(rows) =>
-                    rows.map((r) => ({ ...r, password: "123456" }))
+                    rows.map((r) => ({
+                        ...r,
+                        password: "123456",
+                        yearAdmission: Number(r.yearAdmission),
+                    }))
                 }
             />
         </div>

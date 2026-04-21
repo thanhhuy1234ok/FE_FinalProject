@@ -77,7 +77,7 @@ const LayoutAdmin: React.FC = () => {
                     collapsible
                     collapsed={collapsed}
                     onCollapse={(value) => setCollapsed(value)}
-                    width={280}
+                    width={300}
                     breakpoint="lg"
                     collapsedWidth={84}
                 >

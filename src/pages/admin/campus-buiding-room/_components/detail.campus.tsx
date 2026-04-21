@@ -1,11 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Button, Card, Col, Divider, Row, Tag, Typography } from "antd";
+import { Button, Card, Col, Divider, Row, Tag, Typography, Spin } from "antd";
 import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
+import { getBuildingAPI } from "@/services/api";
+import ModalBuilding from "./modal.building";
+import { useParams } from "react-router-dom";
 
 const { Title, Text } = Typography;
 
 /** =========================
- * Types
+ * Types UI
  ========================== */
 type RoomCode = string;
 
@@ -29,55 +32,104 @@ type CampusView = {
 };
 
 /** =========================
- * Mock Data
+ * Types API
  ========================== */
-const mockCampusData: CampusView = {
-    id: 1,
-    name: "Campus Thủ Đức",
-    buildings: [
-        {
-            id: 101,
-            name: "Tòa A",
-            code: "A",
-            floors: [
-                { floor: 1, rooms: ["A-101", "A-102", "A-103"] },
-                { floor: 2, rooms: ["A-201", "A-202"] },
-                { floor: 3, rooms: [] },
-            ],
-            roomsWithoutFloor: [],
-        },
-        {
-            id: 102,
-            name: "Tòa B",
-            code: "B",
-            floors: [
-                { floor: 1, rooms: ["B-101", "B-102"] },
-                { floor: 2, rooms: ["B-201", "B-202", "B-203"] },
-            ],
-            roomsWithoutFloor: ["B-G01", "B-G02"],
-        },
-        {
-            id: 103,
-            name: "Thư viện",
-            code: "LIB",
-            floors: [],
-            roomsWithoutFloor: ["LIB-001", "LIB-002", "LIB-003"],
-        },
-        {
-            id: 104,
-            name: "Tòa Lab CNTT",
-            code: "IT",
-            floors: [
-                { floor: 1, rooms: ["IT-101", "IT-102", "IT-103", "IT-104"] },
-                { floor: 2, rooms: ["IT-201"] },
-            ],
-            roomsWithoutFloor: [],
-        },
-    ],
+interface IRoomApi {
+    id: number;
+    name?: string;
+    code: string;
+    floor?: number | null;
+}
+
+interface IBuildingApi {
+    id: number;
+    name: string;
+    code: string;
+    campus_id: number;
+    has_floors?: boolean;
+    total_floors?: number | null;
+    is_active?: boolean;
+    rooms?: IRoomApi[];
+    campus?: {
+        id: number;
+        name: string;
+        code?: string;
+        is_active?: boolean;
+    };
+}
+
+/** =========================
+ * Build campus object from buildings API
+ ========================== */
+const buildCampusFromBuildings = (
+    buildings: IBuildingApi[],
+): CampusView | null => {
+    if (!buildings?.length) return null;
+
+    const firstCampus = buildings[0]?.campus;
+
+    return {
+        id: firstCampus?.id ?? buildings[0].campus_id,
+        name: firstCampus?.name ?? "Campus",
+        buildings: buildings.map((building) => {
+            const floorsMap = new Map<number, string[]>();
+            const roomsWithoutFloor: string[] = [];
+
+            (building.rooms ?? []).forEach((room) => {
+                const roomCode = room.code || room.name || `ROOM-${room.id}`;
+
+                if (
+                    room.floor === null ||
+                    room.floor === undefined ||
+                    room.floor === 0
+                ) {
+                    roomsWithoutFloor.push(roomCode);
+                } else {
+                    if (!floorsMap.has(room.floor)) {
+                        floorsMap.set(room.floor, []);
+                    }
+                    floorsMap.get(room.floor)?.push(roomCode);
+                }
+            });
+
+            let floors: FloorGroup[] = Array.from(floorsMap.entries())
+                .sort((a, b) => a[0] - b[0])
+                .map(([floor, rooms]) => ({
+                    floor,
+                    rooms,
+                }));
+
+            if (
+                (building.has_floors ?? true) &&
+                (building.total_floors ?? 0) > 0
+            ) {
+                const existedFloors = new Set(floors.map((f) => f.floor));
+
+                for (let i = 1; i <= (building.total_floors ?? 0); i++) {
+                    if (!existedFloors.has(i)) {
+                        floors.push({
+                            floor: i,
+                            rooms: [],
+                        });
+                    }
+                }
+
+                floors = floors.sort((a, b) => a.floor - b.floor);
+            }
+
+            return {
+                id: building.id,
+                name: building.name,
+                code: building.code,
+                floors,
+                roomsWithoutFloor,
+            };
+        }),
+    };
 };
 
 /** =========================
- * Small helper: smooth collapse
+ * Smooth collapse
  ========================== */
 function CollapseBody({
     expanded,
@@ -86,7 +138,6 @@ function CollapseBody({
     expanded: boolean;
     children: React.ReactNode;
 }) {
-    // maxHeight lớn để đủ chứa nội dung; transition sẽ mượt
     return (
         <div
             style={{
@@ -98,7 +149,6 @@ function CollapseBody({
                     "max-height 260ms ease, opacity 200ms ease, transform 200ms ease",
             }}
         >
-            {/* padding chỉ khi expanded để không chừa khoảng trống */}
             <div style={{ paddingTop: expanded ? 8 : 0 }}>{children}</div>
         </div>
     );
@@ -110,49 +160,74 @@ function CollapseBody({
 export default function CampusBuildingRoomPage() {
     const [openModal, setOpenModal] = useState(false);
     const [dataCampus, setDataCampus] = useState<CampusView | null>(null);
-
-    // ✅ expanded state per building
+    const [loading, setLoading] = useState(false);
+    const { id } = useParams();
     const [expandedBuildings, setExpandedBuildings] = useState<
         Record<number, boolean>
     >({});
 
+    const campusId = Number(id);
+
     const toggleBuilding = (id: number) => {
-        setExpandedBuildings((prev) => ({ ...prev, [id]: !prev[id] }));
+        setExpandedBuildings((prev) => ({
+            ...prev,
+            [id]: !prev[id],
+        }));
     };
 
-    // Fake loading data
+    const fetchCampus = async () => {
+        try {
+            setLoading(true);
+
+            // nếu API của bạn hỗ trợ query string thì dùng kiểu này
+            const res = await getBuildingAPI(
+                `current=1&pageSize=100&campus_id=${campusId}`,
+            );
+
+            const buildingList: IBuildingApi[] =
+                res?.data?.result ??
+                res?.data?.data?.result ??
+                res?.data?.data ??
+                [];
+
+            const transformed = buildCampusFromBuildings(buildingList);
+            setDataCampus(transformed);
+
+            const initExpanded: Record<number, boolean> = {};
+            transformed?.buildings?.forEach((b) => {
+                initExpanded[b.id] = true;
+            });
+            setExpandedBuildings(initExpanded);
+        } catch (error) {
+            console.error("Fetch campus failed:", error);
+            setDataCampus(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const t = setTimeout(() => {
-            setDataCampus(mockCampusData);
-        }, 250);
-        return () => clearTimeout(t);
+        fetchCampus();
     }, []);
 
-    // Default expand all buildings when data loaded
-    useEffect(() => {
-        if (!dataCampus) return;
-        const init: Record<number, boolean> = {};
-        dataCampus.buildings.forEach((b) => (init[b.id] = true));
-        setExpandedBuildings(init);
-    }, [dataCampus]);
-
-    // Tổng số phòng toàn campus
     const totalRooms = useMemo(() => {
         if (!dataCampus) return 0;
+
         return dataCampus.buildings.reduce((sum, b) => {
             const floorRoomCount =
                 b.floors?.reduce(
                     (count, f) => count + (f.rooms?.length ?? 0),
                     0,
                 ) ?? 0;
+
             const noFloorRoomCount = b.roomsWithoutFloor?.length ?? 0;
+
             return sum + floorRoomCount + noFloorRoomCount;
         }, 0);
     }, [dataCampus]);
 
     return (
         <div style={{ padding: 30, background: "#f2f4f7", minHeight: "100%" }}>
-            {/* Header */}
             <div
                 style={{
                     display: "flex",
@@ -175,261 +250,274 @@ export default function CampusBuildingRoomPage() {
                 </Button>
             </div>
 
-            {/* Campus Card */}
             <Card
-                key={dataCampus?.id}
+                key={dataCampus?.id ?? "campus-card"}
                 title={
                     <Text strong style={{ color: "#1e90ff" }}>
                         {dataCampus?.name ?? "Đang tải..."}
                     </Text>
                 }
                 style={{ marginBottom: 30, borderRadius: 12 }}
-                bodyStyle={{ backgroundColor: "#ffffff", borderRadius: 12 }}
-                loading={!dataCampus}
+                styles={{
+                    body: { backgroundColor: "#ffffff", borderRadius: 12 },
+                }}
             >
-                {dataCampus?.buildings?.map((building) => {
-                    const floorRoomCount =
-                        building.floors?.reduce(
-                            (count, floor) =>
-                                count + (floor.rooms?.length ?? 0),
-                            0,
-                        ) ?? 0;
+                {loading ? (
+                    <div style={{ padding: "24px 0", textAlign: "center" }}>
+                        <Spin />
+                    </div>
+                ) : !dataCampus ? (
+                    <Text type="secondary">Không có dữ liệu campus</Text>
+                ) : (
+                    <>
+                        {dataCampus.buildings?.map((building) => {
+                            const floorRoomCount =
+                                building.floors?.reduce(
+                                    (count, floor) =>
+                                        count + (floor.rooms?.length ?? 0),
+                                    0,
+                                ) ?? 0;
 
-                    const noFloorRoomCount =
-                        building.roomsWithoutFloor?.length ?? 0;
-                    const roomCount = floorRoomCount + noFloorRoomCount;
+                            const noFloorRoomCount =
+                                building.roomsWithoutFloor?.length ?? 0;
+                            const roomCount = floorRoomCount + noFloorRoomCount;
 
-                    const expanded = !!expandedBuildings[building.id];
+                            const expanded = !!expandedBuildings[building.id];
 
-                    return (
-                        <Card
-                            key={building.id}
-                            type="inner"
-                            title={
-                                <div
+                            return (
+                                <Card
+                                    key={building.id}
+                                    type="inner"
+                                    title={
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                gap: 12,
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 8,
+                                                    flexWrap: "wrap",
+                                                }}
+                                            >
+                                                <Text strong>
+                                                    {building.name}
+                                                </Text>
+                                                <Tag color="geekblue">
+                                                    {building.code}
+                                                </Tag>
+                                            </div>
+
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 10,
+                                                }}
+                                            >
+                                                <Text type="secondary">
+                                                    ({roomCount} phòng)
+                                                </Text>
+
+                                                <Button
+                                                    size="small"
+                                                    shape="circle"
+                                                    onClick={() =>
+                                                        toggleBuilding(
+                                                            building.id,
+                                                        )
+                                                    }
+                                                    title={
+                                                        expanded
+                                                            ? "Thu gọn"
+                                                            : "Mở rộng"
+                                                    }
+                                                    icon={
+                                                        expanded ? (
+                                                            <MinusOutlined />
+                                                        ) : (
+                                                            <PlusOutlined />
+                                                        )
+                                                    }
+                                                    style={{
+                                                        display: "inline-flex",
+                                                        alignItems: "center",
+                                                        justifyContent:
+                                                            "center",
+                                                        transition:
+                                                            "all 160ms ease",
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    }
                                     style={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        alignItems: "center",
-                                        gap: 12,
+                                        marginBottom: 20,
+                                        borderLeft: "4px solid #1e90ff",
+                                        background: "#f9f9f9",
+                                        borderRadius: 8,
                                     }}
                                 >
-                                    <Text strong>{building.name}</Text>
-
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 10,
-                                        }}
-                                    >
-                                        <Text type="secondary">
-                                            ({roomCount} phòng)
-                                        </Text>
-
-                                        <Button
-                                            size="small"
-                                            shape="circle"
-                                            onClick={() =>
-                                                toggleBuilding(building.id)
-                                            }
-                                            aria-label={
-                                                expanded
-                                                    ? "Collapse rooms"
-                                                    : "Expand rooms"
-                                            }
-                                            title={
-                                                expanded ? "Thu gọn" : "Mở rộng"
-                                            }
-                                            icon={
-                                                expanded ? (
-                                                    <MinusOutlined />
-                                                ) : (
-                                                    <PlusOutlined />
-                                                )
-                                            }
-                                            style={{
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                transition: "all 160ms ease",
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            }
-                            style={{
-                                marginBottom: 20,
-                                borderLeft: "4px solid #1e90ff",
-                                background: "#f9f9f9",
-                                borderRadius: 8,
-                            }}
-                        >
-                            {/* ✅ Smooth collapse, no "Đang thu gọn" text */}
-                            <CollapseBody expanded={expanded}>
-                                {roomCount === 0 ? (
-                                    <Text type="secondary">Không có phòng</Text>
-                                ) : (
-                                    <>
-                                        {/* Có tầng */}
-                                        {building.floors?.map((floor) => (
-                                            <div
-                                                key={`${building.id}-floor-${floor.floor}`}
-                                                style={{ marginBottom: 16 }}
-                                            >
-                                                <Text
-                                                    italic
-                                                    style={{ color: "#636e72" }}
-                                                >
-                                                    Tầng {floor.floor}:
-                                                </Text>
-
-                                                <Row
-                                                    gutter={[8, 8]}
-                                                    style={{ marginTop: 8 }}
-                                                >
-                                                    {floor.rooms?.length ? (
-                                                        floor.rooms.map(
-                                                            (room) => (
-                                                                <Col
-                                                                    key={`${building.id}-${room}`}
-                                                                >
-                                                                    <Tag
-                                                                        color="blue"
-                                                                        style={{
-                                                                            borderRadius: 20,
-                                                                            padding:
-                                                                                "6px 12px",
-                                                                            transition:
-                                                                                "transform 160ms ease",
-                                                                        }}
-                                                                    >
-                                                                        Phòng{" "}
-                                                                        {room}
-                                                                    </Tag>
-                                                                </Col>
-                                                            ),
-                                                        )
-                                                    ) : (
-                                                        <Col>
-                                                            <Tag
-                                                                color="default"
+                                    <CollapseBody expanded={expanded}>
+                                        {roomCount === 0 ? (
+                                            <Text type="secondary">
+                                                Không có phòng
+                                            </Text>
+                                        ) : (
+                                            <>
+                                                {building.floors?.map(
+                                                    (floor) => (
+                                                        <div
+                                                            key={`${building.id}-floor-${floor.floor}`}
+                                                            style={{
+                                                                marginBottom: 16,
+                                                            }}
+                                                        >
+                                                            <Text
+                                                                italic
                                                                 style={{
-                                                                    borderRadius: 20,
-                                                                    padding:
-                                                                        "6px 12px",
-                                                                    color: "#999",
+                                                                    color: "#636e72",
                                                                 }}
                                                             >
-                                                                Chưa có phòng
-                                                            </Tag>
-                                                        </Col>
-                                                    )}
-                                                </Row>
-                                            </div>
-                                        ))}
+                                                                Tầng{" "}
+                                                                {floor.floor}:
+                                                            </Text>
 
-                                        {/* Phòng không thuộc tầng */}
-                                        {!!building.roomsWithoutFloor
-                                            ?.length && (
-                                            <div style={{ marginBottom: 16 }}>
-                                                <Text
-                                                    italic
-                                                    style={{ color: "#636e72" }}
-                                                >
-                                                    Không có tầng:
-                                                </Text>
-
-                                                <Row
-                                                    gutter={[8, 8]}
-                                                    style={{ marginTop: 8 }}
-                                                >
-                                                    {building.roomsWithoutFloor.map(
-                                                        (room) => (
-                                                            <Col
-                                                                key={`${building.id}-nofloor-${room}`}
+                                                            <Row
+                                                                gutter={[8, 8]}
+                                                                style={{
+                                                                    marginTop: 8,
+                                                                }}
                                                             >
-                                                                <Tag
-                                                                    color="blue"
-                                                                    style={{
-                                                                        borderRadius: 20,
-                                                                        padding:
-                                                                            "6px 12px",
-                                                                    }}
-                                                                >
-                                                                    Phòng {room}
-                                                                </Tag>
-                                                            </Col>
-                                                        ),
-                                                    )}
-                                                </Row>
-                                            </div>
+                                                                {floor.rooms
+                                                                    ?.length ? (
+                                                                    floor.rooms.map(
+                                                                        (
+                                                                            room,
+                                                                        ) => (
+                                                                            <Col
+                                                                                key={`${building.id}-${room}`}
+                                                                            >
+                                                                                <Tag
+                                                                                    color="blue"
+                                                                                    style={{
+                                                                                        borderRadius: 20,
+                                                                                        padding:
+                                                                                            "6px 12px",
+                                                                                        transition:
+                                                                                            "transform 160ms ease",
+                                                                                    }}
+                                                                                >
+                                                                                    Phòng{" "}
+                                                                                    {
+                                                                                        room
+                                                                                    }
+                                                                                </Tag>
+                                                                            </Col>
+                                                                        ),
+                                                                    )
+                                                                ) : (
+                                                                    <Col>
+                                                                        <Tag
+                                                                            color="default"
+                                                                            style={{
+                                                                                borderRadius: 20,
+                                                                                padding:
+                                                                                    "6px 12px",
+                                                                                color: "#999",
+                                                                            }}
+                                                                        >
+                                                                            Chưa
+                                                                            có
+                                                                            phòng
+                                                                        </Tag>
+                                                                    </Col>
+                                                                )}
+                                                            </Row>
+                                                        </div>
+                                                    ),
+                                                )}
+
+                                                {!!building.roomsWithoutFloor
+                                                    ?.length && (
+                                                    <div
+                                                        style={{
+                                                            marginBottom: 16,
+                                                        }}
+                                                    >
+                                                        <Text
+                                                            italic
+                                                            style={{
+                                                                color: "#636e72",
+                                                            }}
+                                                        >
+                                                            Không có tầng:
+                                                        </Text>
+
+                                                        <Row
+                                                            gutter={[8, 8]}
+                                                            style={{
+                                                                marginTop: 8,
+                                                            }}
+                                                        >
+                                                            {building.roomsWithoutFloor.map(
+                                                                (room) => (
+                                                                    <Col
+                                                                        key={`${building.id}-nofloor-${room}`}
+                                                                    >
+                                                                        <Tag
+                                                                            color="blue"
+                                                                            style={{
+                                                                                borderRadius: 20,
+                                                                                padding:
+                                                                                    "6px 12px",
+                                                                            }}
+                                                                        >
+                                                                            Phòng{" "}
+                                                                            {
+                                                                                room
+                                                                            }
+                                                                        </Tag>
+                                                                    </Col>
+                                                                ),
+                                                            )}
+                                                        </Row>
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
-                                    </>
-                                )}
 
-                                <Divider style={{ margin: "12px 0" }} />
-                                <Text strong style={{ color: "#2f3542" }}>
-                                    Số phòng trong tòa: {roomCount}
-                                </Text>
-                            </CollapseBody>
-                        </Card>
-                    );
-                })}
+                                        <Divider style={{ margin: "12px 0" }} />
+                                        <Text
+                                            strong
+                                            style={{ color: "#2f3542" }}
+                                        >
+                                            Số phòng trong tòa: {roomCount}
+                                        </Text>
+                                    </CollapseBody>
+                                </Card>
+                            );
+                        })}
 
-                <Divider />
-                <Text strong style={{ color: "#27ae60" }}>
-                    Tổng số phòng: {totalRooms}
-                </Text>
+                        <Divider />
+                        <Text strong style={{ color: "#27ae60" }}>
+                            Tổng số phòng: {totalRooms}
+                        </Text>
+                    </>
+                )}
             </Card>
 
-            {/* Demo modal (bạn thay bằng ModalBuilding thật) */}
-            {openModal && (
-                <Card style={{ borderRadius: 12 }}>
-                    <Text strong>Modal tạo mới tòa nhà (demo)</Text>
-                    <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
-                        <Button onClick={() => setOpenModal(false)}>
-                            Đóng
-                        </Button>
-                        <Button
-                            type="primary"
-                            onClick={() => {
-                                setDataCampus((prev) => {
-                                    if (!prev) return prev;
-                                    const nextId =
-                                        Math.max(
-                                            ...prev.buildings.map((b) => b.id),
-                                        ) + 1;
-
-                                    const newBuilding: BuildingView = {
-                                        id: nextId,
-                                        name: `Tòa mới ${nextId}`,
-                                        code: `NEW${nextId}`,
-                                        floors: [{ floor: 1, rooms: [] }],
-                                        roomsWithoutFloor: [],
-                                    };
-
-                                    setExpandedBuildings((old) => ({
-                                        ...old,
-                                        [nextId]: true,
-                                    }));
-
-                                    return {
-                                        ...prev,
-                                        buildings: [
-                                            newBuilding,
-                                            ...prev.buildings,
-                                        ],
-                                    };
-                                });
-                                setOpenModal(false);
-                            }}
-                        >
-                            Fake tạo tòa nhà
-                        </Button>
-                    </div>
-                </Card>
-            )}
+            <ModalBuilding
+                openModal={openModal}
+                setOpenModal={setOpenModal}
+                reloadTable={fetchCampus}
+                campusId={+campusId}
+            />
         </div>
     );
 }

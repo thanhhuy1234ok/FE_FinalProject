@@ -26,7 +26,7 @@ const RenderHeaderTable = ({
     return (
         <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span style={{ display: "flex", gap: 15 }}>
-                {showExport && (
+                {showExport && handleExportData && (
                     <ButtonComponents
                         icon={<ExportOutlined />}
                         onClick={handleExportData}

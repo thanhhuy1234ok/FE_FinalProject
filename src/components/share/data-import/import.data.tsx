@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { UploadProps } from "antd";
 const { Dragger } = Upload;
 import type { UploadRequestOption } from "rc-upload/lib/interface";
+import formatSkippedErrors from "../error.message";
 
 const ImportExcelData = <T extends Record<string, any>>(
     props: IDataImportProps<T>,
@@ -74,35 +75,66 @@ const ImportExcelData = <T extends Record<string, any>>(
 
             const res = await props.apiFunction(payload);
 
-            const success = res?.data?.countSuccess ?? 0;
-            const error = res?.data?.countError ?? 0;
-            const skipped = res?.data?.skipped ?? [];
+            const result = res?.data?.data || {};
+            const success = result.countSuccess ?? 0;
+            const error = result.countError ?? 0;
+            const skipped = result.skipped ?? result.errors ?? [];
 
             if (success > 0) {
                 notification.success({
                     message: "Upload thành công",
-                    description: `Success: ${success}, Error: ${error}`,
+                    description: `Thành công: ${success}${error > 0 ? `, Lỗi: ${error}` : ""}`,
                 });
+
+                if (error > 0 && skipped.length > 0) {
+                    notification.warning({
+                        message: "Một số dòng bị lỗi",
+                        description: (
+                            <div style={{ whiteSpace: "pre-line" }}>
+                                {formatSkippedErrors(skipped, 5)}
+                            </div>
+                        ),
+                    });
+                }
 
                 setDataExcel([]);
                 setOpenModalImport(false);
                 props.fetchData();
-            } else if (error > 0 && skipped.length > 0) {
+                return;
+            }
+
+            if (error > 0 && skipped.length > 0) {
                 notification.error({
                     message: "Import thất bại",
-                    description: skipped[0].reason,
+                    description: (
+                        <div style={{ whiteSpace: "pre-line" }}>
+                            {formatSkippedErrors(skipped, 5)}
+                        </div>
+                    ),
                 });
-            } else {
-                notification.error({
-                    message: "Đã có lỗi xảy ra",
-                    description: res?.message ?? "Unknown error",
-                });
+                return;
             }
-        } catch (err: any) {
+
             notification.error({
-                description: err?.message ?? "Submit failed",
                 message: "Đã có lỗi xảy ra",
+                description: res?.data?.message ?? "Unknown error",
             });
+        } catch (error: any) {
+            const errMessage =
+                error?.response?.data?.message ||
+                error?.message ||
+                "Submit failed";
+
+            notification.error({
+                message: "Đã có lỗi xảy ra",
+                description: Array.isArray(errMessage)
+                    ? errMessage.join("\n")
+                    : errMessage,
+            });
+
+            setDataExcel([]);
+            setOpenModalImport(false);
+            props.fetchData();
         }
     };
 

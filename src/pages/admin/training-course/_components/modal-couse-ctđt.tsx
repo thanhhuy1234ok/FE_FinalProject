@@ -8,6 +8,7 @@ import {
     DatePicker,
     InputNumber,
     message,
+    notification,
 } from "antd";
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
@@ -16,13 +17,12 @@ import {
     createCurriculumsAPI,
     previewCurriculumsAPI,
 } from "@/services/api"; // ✅ dùng cái của bạn (nhớ sửa sang POST body)
-type Option = { label: string; value: number };
 
 interface Props {
     open: boolean;
     onClose: () => void;
-    majorOptions: Option[];
-    yearOptions: Option[];
+    majorOptions: IOptionSelect[];
+    yearOptions: IOptionSelect[];
     defaultYearOfAdmissionId?: number | null;
     onCreated?: () => void;
 }
@@ -38,7 +38,7 @@ type FormValues = {
     total_credits_required: number;
 };
 
-const ModalCourseCTĐT = ({
+const ModalCourseCTDT = ({
     open,
     onClose,
     majorOptions,
@@ -113,16 +113,20 @@ const ModalCourseCTĐT = ({
             };
 
             const res = await createCurriculumsAPI(payload);
-            if (res?.data) {
-                message.success("Tạo CTĐT thành công!");
-                onClose();
-                form.resetFields();
-                onCreated?.();
-            } else {
-                message.error("Tạo CTĐT thất bại!");
-            }
-        } catch {
-            // ignore
+            message.success(res.message || "Tạo CTĐT thành công!");
+            onClose();
+            form.resetFields();
+        } catch (error: unknown) {
+            const err = error as IBackendError;
+
+            const errMessage = err?.message;
+
+            notification.error({
+                message: "Lỗi",
+                description: Array.isArray(errMessage)
+                    ? errMessage[0]
+                    : errMessage || "Tạo CTĐT thất bại!",
+            });
         } finally {
             setLoadingCreate(false);
         }
@@ -169,15 +173,6 @@ const ModalCourseCTĐT = ({
                             optionFilterProp="label"
                             disabled
                         />
-                    </Form.Item>
-
-                    <Form.Item
-                        name="version"
-                        label="Version"
-                        rules={[{ required: true, message: "Nhập version" }]}
-                        style={{ width: 150 }}
-                    >
-                        <Input placeholder="v1" />
                     </Form.Item>
                 </Space>
 
@@ -271,4 +266,4 @@ const ModalCourseCTĐT = ({
     );
 };
 
-export default ModalCourseCTĐT;
+export default ModalCourseCTDT;

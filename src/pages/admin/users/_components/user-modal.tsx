@@ -9,8 +9,8 @@ import "@/styles/model.scss";
 import { DebounceSelect } from "@/components/share/debouce.select";
 import userHooks from "../_hooks/user.hook";
 import { useCallback } from "react";
-import { createUserAPI } from "@/services/api";
-import { renderByRole } from "./renderByRole ";
+import { createTeacherSubjectsAPI, createUserAPI } from "@/services/api";
+import RenderByRole from "./renderByRole ";
 
 interface IProps {
     openModal: boolean;
@@ -35,57 +35,104 @@ const UserModal = (props: IProps) => {
         setDataUpdate(null);
         setOpenModal(false);
     };
-
     const submitFrom = async (valuesForm: any) => {
-        // valuesForm.role là object labelInValue
-        const roleId = valuesForm?.role?.value;
-        const majorId = valuesForm?.major?.value;
-        const classId = valuesForm?.AdminClass?.value;
-        const yearOfAdmissionId = valuesForm?.YearOfStudy?.value;
-        const departmentId = valuesForm?.department?.value;
-        const basePayload = {
-            name: valuesForm.name,
-            email: valuesForm.email,
-            password: valuesForm.password,
-            gender: valuesForm.gender,
-            role: roleId,
-        };
+        try {
+            const roleId = valuesForm?.role?.value;
+            const majorId = valuesForm?.major?.value;
+            const classId = valuesForm?.AdminClass?.value;
+            const yearOfAdmissionId = valuesForm?.YearOfStudy?.value;
+            const departmentId = valuesForm?.department?.value;
+            const subjectIds =
+                valuesForm?.subjects?.map((item: any) => item.value) ?? [];
 
-        // ✅ payload theo role
-        let payload: any = basePayload;
-
-        if (roleId === 2) {
-            payload = {
-                ...basePayload,
-                specialization: valuesForm.specialization,
-                degree: valuesForm.degree,
-                departmentId: departmentId,
+            const basePayload = {
+                name: valuesForm.name,
+                email: valuesForm.email,
+                password: valuesForm.password,
+                gender: valuesForm.gender,
+                role: roleId,
             };
-        }
 
-        if (roleId === 3) {
-            payload = {
-                ...basePayload,
-                major_id: majorId,
-                class_id: classId,
-                yearOfAdmissionId: yearOfAdmissionId,
-            };
-        }
+            let payload: any = basePayload;
 
-        const res = await createUserAPI(payload);
-        if (res && res.data) {
-            message.success("Tạo user thành công");
+            if (roleId === 2) {
+                payload = {
+                    ...basePayload,
+                    specialization: valuesForm.specialization,
+                    degree: valuesForm.degree,
+                    departmentId,
+                };
+            }
+
+            if (roleId === 3) {
+                payload = {
+                    ...basePayload,
+                    major_id: majorId,
+                    class_id: classId,
+                    yearOfAdmissionId,
+                };
+            }
+
+            const res = await createUserAPI(payload);
+
+            if (!res?.data) {
+                notification.error({
+                    message: "Đã có lỗi xảy ra",
+                    description: res?.message || "Tạo user thất bại",
+                });
+                return false;
+            }
+
+            // teacher thì gán thêm môn
+            if (roleId === 2 && subjectIds.length > 0) {
+                const teacherId = res.data.id;
+
+                const payloadSub = {
+                    teacherId,
+                    subjectIds,
+                };
+
+                const subjectRes = await createTeacherSubjectsAPI(payloadSub);
+
+                if (!subjectRes?.data) {
+                    notification.warning({
+                        message:
+                            "Tạo giáo viên thành công nhưng gán môn thất bại",
+                        description: subjectRes?.message || "Có lỗi xảy ra",
+                    });
+
+                    return false;
+                }
+
+                notification.success({
+                    message: "Tạo user thành công",
+                });
+
+                form.resetFields();
+                setOpenModal(false);
+                refreshTable();
+                return true;
+            }
+
+            notification.success({
+                message: "Tạo user thành công",
+            });
+
             form.resetFields();
             setOpenModal(false);
             refreshTable();
-        } else {
+
+            return true;
+        } catch (error: any) {
             notification.error({
                 message: "Đã có lỗi xảy ra",
-                description: res.message,
+                description:
+                    error?.response?.data?.message ||
+                    error?.message ||
+                    "Không thể tạo user",
             });
+            return false;
         }
-        console.log("payload", payload);
-        return true;
     };
 
     return (
@@ -243,7 +290,7 @@ const UserModal = (props: IProps) => {
                             />
                         </ProForm.Item>
                     </Col>
-                    {renderByRole()}
+                    <RenderByRole />
                 </Row>
             </ModalForm>
         </>

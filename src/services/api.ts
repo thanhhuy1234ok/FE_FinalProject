@@ -2,6 +2,7 @@ import {
     AUTH_API,
     CAPUS_BUILDING_ROOM_API,
     CLASSES_API,
+    COURSE_OFF_API,
     Curriculum_API,
     CURRICULUM_SUBJECT_API,
     DEPARTMENT_API,
@@ -43,11 +44,17 @@ export const createUserAPI = (data: Record<string, unknown>) => {
     return axios.post<IBackendRes<IUserDetail>>(USER_API.CREATE, { ...data });
 };
 
-export const getDetailUserAPI = (id: string) => {
+export const getDetailUserAPI = (id: string | number) => {
     return axios.get<IBackendRes<IUserDetail>>(USER_API.DETAIL(id));
 };
 export const deleteUserAPI = (id: number | string) => {
     return axios.delete<IBackendRes<null>>(USER_API.DELETE(id));
+};
+
+export const getListTeacherAPI = (query: string) => {
+    return axios.get<IBackendRes<IModelPaginate<ITeacherProfile>>>(
+        USER_API.LIST_TEACHER(query),
+    );
 };
 
 export const updateUserAPI = (
@@ -59,10 +66,10 @@ export const updateUserAPI = (
     });
 };
 
-export const callBulkCreateUser = (user: IUserExcel[]) => {
-    return axios.post<IBackendRes<IUserExcel[]>>(
-        "/api/v1/users/bulk-create",
-        user,
+export const callBulkCreateUser = (items: IStudentExcel[]) => {
+    return axios.post<IBackendRes<IStudentExcel[]>>(
+        "/api/v1/users/bulk-student",
+        { items },
     );
 };
 
@@ -82,6 +89,10 @@ export const createMajorAPI = (data: Record<string, unknown>) => {
     return axios.post<IBackendRes<IMajor>>(MAJORS_API.CREATE, {
         ...data,
     });
+};
+
+export const getMajorDetailAPI = (id: number) => {
+    return axios.get<IBackendRes<any>>(MAJORS_API.DETAIL(id));
 };
 
 //** Class API */
@@ -156,10 +167,22 @@ export const createBuildingAPI = (
         { ...data },
     );
 };
+export const getBuildingAPI = (query: any) => {
+    return axios.get(CAPUS_BUILDING_ROOM_API.LIST_BUILDING(query));
+};
 
 //** Term API */
 export const getTermsAPI = (query: string) => {
     return axios.get<IBackendRes<IModelPaginate<ITerm>>>(TERMS_API.LIST(query));
+};
+export const createTermAPI = (data: any) => {
+    return axios.post<IBackendRes<ITerm>>(TERMS_API.CREATE, {
+        ...data,
+    });
+};
+
+export const activateTermAPI = (id: number) => {
+    return axios.patch(TERMS_API.IS_ACTIVE(id));
 };
 
 //** Curriculum API */
@@ -216,6 +239,10 @@ export const getSubjectsAPI = (query: string) => {
     );
 };
 
+export const createSubjectAPI = (data: any) => {
+    return axios.post<IBackendRes<ISubject>>(SUBJECT_API.CREATE, data);
+};
+
 //** Department API */
 export const getDepartmentsAPI = (query: string) => {
     return axios.get<IBackendRes<IModelPaginate<IDepartment>>>(
@@ -244,4 +271,167 @@ export const createFacultyAPI = (data: IDepartment) => {
 
 export const detailFacultyAPI = (id: number) => {
     return axios.get<IBackendRes<IFaculty>>(FACULTY_API.DETAIL(id));
+};
+
+export const countFacultyAPI = (id: number) => {
+    return axios.get<IBackendRes<any>>(FACULTY_API.COUNT_FACULTY(id));
+};
+
+//** Teacher Subject*//
+export const createTeacherSubjectsAPI = (data: {
+    teacherId: number | string;
+    subjectIds: number[];
+}) => {
+    return axios.post<
+        IBackendRes<{
+            teacherId: number | string;
+            subjectIds: number[];
+        }>
+    >("/api/v1/teacher-subject/many-sub", data);
+};
+
+export const getTeacherAPI = (query: string) => {
+    return axios.get<IBackendRes<IModelPaginate<any>>>(
+        `/api/v1/users/teachers?${query}`,
+    );
+};
+
+export const getTeacherSubjectsAPI = (query: string) => {
+    return axios.get<IBackendRes<IModelPaginate<any>>>(
+        `/api/v1/teacher-subject?${query}`,
+    );
+};
+//**  */
+export const getCourseOfferingAPI = (query: string) => {
+    return axios.get<IBackendRes<IModelPaginate<any>>>(
+        COURSE_OFF_API.LIST(query),
+    );
+};
+export const createCourseOfferingAPI = (data: any) => {
+    return axios.post<IBackendRes<any>>(COURSE_OFF_API.CREATE, data);
+};
+
+export const updateCourseOfferingStatusAPI = async (
+    id: number,
+    status: string,
+) => {
+    return axios.patch(`/api/v1/course-offering/${id}/status`, { status });
+};
+
+export const bulkOpenCourseOfferingAPI = async (ids: number[]) => {
+    return axios.post("/api/v1/course-offering/open-bulk", { ids });
+};
+
+export const getCourseOfferingDetailAPI = (id: number) => {
+    return axios.get(`/api/v1/course-offering/${id}`);
+};
+
+export const getLessonByCourseOfferingAPI = (courseOfferingId: number) => {
+    return axios.get(`/api/v1/lessons/course-offering/${courseOfferingId}`);
+};
+
+//** SCHEDULE */
+export const getSchedulesAPI = (query: string) => {
+    return axios.get<IBackendRes<IModelPaginate<any>>>(
+        `/api/v1/schedules?${query}`,
+    );
+};
+
+export const createScheduleAPI = (data: any) => {
+    return axios.post<IBackendRes<any>>(`/api/v1/schedules`, data);
+};
+
+//** Admin Class */
+export const createAdminClassAPI = (data: any) => {
+    return axios.post<IBackendRes<any>>(`/api/v1/admin-class`, data);
+};
+
+export const getAdminClassAPI = (query: string) => {
+    return axios.get<IBackendRes<IModelPaginate<any>>>(
+        `/api/v1/admin-class?${query}`,
+    );
+};
+
+export const createAdminClassAdvisorAPI = (data: any) => {
+    return axios.post<IBackendRes<any>>(`/api/v1/admin-class-advisor`, data);
+};
+
+export const getDetailAdminClassAPI = (id: number) => {
+    return axios.get<IBackendRes<any>>(`/api/v1/admin-class/${id}`);
+};
+
+export const getDetailAdminClassAdviorAPI = (id: number) => {
+    return axios.get<IBackendRes<any>>(`/api/v1/admin-class-advisor/${id}`);
+};
+
+export const previewAdminClassAPI = (
+    majorId: number,
+    yearOfAdmissionId: number,
+) => {
+    return axios.get(
+        `/api/v1/admin-class/preview?majorId=${majorId}&yearOfAdmissionId=${yearOfAdmissionId}`,
+    );
+};
+
+export const getAvailableCourseOfferingsForStudentAPI = (query: string) => {
+    return axios.get<IBackendRes<IModelPaginate<any>>>(
+        `/api/v1/course-registrations/available?${query}`,
+    );
+};
+
+// export const getAvailableCourseOfferingsForStudentAPI = (termId?: number) => {
+//     const query = termId ? `?termId=${termId}` : "";
+//     return axios.get(`/api/v1/course-registrations/available${query}`);
+// };
+
+export const getMyCourseRegistrationsAPI = (query: string) => {
+    return axios.get<IBackendRes<any>>(
+        `/api/v1/course-registrations/my?${query}`,
+    );
+};
+
+export const registerCourseAPI = (courseOfferingId: number) => {
+    return axios.post<IBackendRes<any>>("/api/v1/course-registrations", {
+        courseOfferingId,
+    });
+};
+
+export const cancelCourseRegistrationAPI = (id: number) => {
+    return axios.delete<IBackendRes<any>>(`/api/v1/course-registrations/${id}`);
+};
+
+export const checkRegisterCourseConflictAPI = (
+    courseOfferingId: number,
+    selectedCourseOfferingIds: number[] = [],
+) => {
+    return axios.post("/api/v1/course-registrations/check-conflict", {
+        courseOfferingId,
+        selectedCourseOfferingIds,
+    });
+};
+
+export const getMyCurrentPaymentAPI = async () => {
+    return axios.get("/api/v1/payment/my-current");
+};
+
+export const payPaymentAPI = async (
+    paymentId: number,
+    body: {
+        paymentMethod: "CASH" | "BANK_TRANSFER" | "MOMO";
+        note?: string;
+    },
+) => {
+    return axios.patch(`/api/v1/payment/${paymentId}/pay`, body);
+};
+
+export const getMyPaymentsAPI = async () => {
+    return axios.get("/api/v1/payment/my-payments");
+};
+
+export const getPaymentDetailAPI = async (paymentId: number) => {
+    return axios.get(`/api/v1/payment/${paymentId}`);
+};
+
+export const getMyLessonsByDateAPI = (date: string) => {
+    return axios.get(`/api/v1/lessons/my-lessons-by-date?date=${date}`);
 };
