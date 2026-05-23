@@ -48,6 +48,7 @@ export type RegisteredItem = {
                 code?: string;
                 name?: string;
                 credits?: number;
+                credit?: number;
             };
             teacher?: {
                 user?: {
@@ -67,7 +68,6 @@ export type RegisteredCoursesTabProps = {
     submitting: boolean;
     onChangeTerm: (value: string) => void;
     onPayAll: () => void | Promise<void>;
-    onPayOne: (record: RegisteredItem) => void | Promise<void>;
     onCancel: (id: number) => void | Promise<void>;
 };
 
@@ -94,9 +94,11 @@ const getDayLabel = (dayOfWeek?: number) => {
 
 const getTermLabel = (term?: { semester?: string; year?: number }) => {
     if (!term) return "—";
+
     return (
-        `${term?.semester ?? ""}${term?.year ? ` - ${term.year}` : ""}`.trim() ||
-        "—"
+        `${term?.semester ?? ""}${
+            term?.year ? ` - ${term.year}` : ""
+        }`.trim() || "—"
     );
 };
 
@@ -123,7 +125,7 @@ const renderLesson = (schedules?: ScheduleItem[]): ReactNode => {
                 <Text key={`${schedule?.id ?? index}-lesson`}>
                     Tiết {schedule?.lessonStart ?? "—"}
                     {schedule?.lessonEnd &&
-                    schedule?.lessonEnd !== schedule?.lessonStart
+                    schedule.lessonEnd !== schedule.lessonStart
                         ? ` - ${schedule.lessonEnd}`
                         : ""}
                 </Text>
@@ -132,15 +134,26 @@ const renderLesson = (schedules?: ScheduleItem[]): ReactNode => {
     );
 };
 
+const renderStatus = (record: RegisteredItem) => {
+    if (record?.isPaid) {
+        return <Tag color="green">Đã thanh toán</Tag>;
+    }
+
+    if (record?.status === "CANCELLED") {
+        return <Tag color="red">Đã hủy</Tag>;
+    }
+
+    return <Tag color="blue">Đã đăng ký</Tag>;
+};
+
 const buildColumns = (
     submitting: boolean,
-    onPayOne: (record: RegisteredItem) => void | Promise<void>,
     onCancel: (id: number) => void | Promise<void>,
 ): ColumnsType<RegisteredItem> => [
     {
         title: "Mã LHP",
         key: "code",
-        width: 170,
+        width: 160,
         render: (_, record) => record?.courseOffering?.code || "—",
     },
     {
@@ -156,6 +169,16 @@ const buildColumns = (
         width: 220,
         render: (_, record) =>
             record?.courseOffering?.teacherSubject?.subject?.name || "—",
+    },
+    {
+        title: "Số tín chỉ",
+        key: "credits",
+        width: 100,
+        align: "center",
+        render: (_, record) =>
+            record?.courseOffering?.teacherSubject?.subject?.credits ??
+            record?.courseOffering?.teacherSubject?.subject?.credit ??
+            "—",
     },
     {
         title: "Thứ",
@@ -186,11 +209,17 @@ const buildColumns = (
     {
         title: "Lớp hành chính",
         key: "adminClass",
-        width: 220,
+        width: 180,
         render: (_, record) =>
             record?.courseOffering?.adminClass?.name ||
             record?.courseOffering?.adminClass?.code ||
             "—",
+    },
+    {
+        title: "Trạng thái",
+        key: "status",
+        width: 140,
+        render: (_, record) => renderStatus(record),
     },
     {
         title: "Thao tác",
@@ -200,9 +229,17 @@ const buildColumns = (
         render: (_, record) => (
             <Popconfirm
                 title="Bạn chắc chắn muốn hủy đăng ký?"
+                okText="Đồng ý"
+                cancelText="Hủy"
+                disabled={record?.isPaid || submitting}
                 onConfirm={() => onCancel(record.id)}
             >
-                <Button danger size="small" loading={submitting}>
+                <Button
+                    danger
+                    size="small"
+                    loading={submitting}
+                    disabled={record?.isPaid}
+                >
                     Hủy đăng ký
                 </Button>
             </Popconfirm>
@@ -219,7 +256,6 @@ const RegisteredCoursesTab = ({
     submitting,
     onChangeTerm,
     onPayAll,
-    onPayOne,
     onCancel,
 }: RegisteredCoursesTabProps) => {
     return (
@@ -238,7 +274,8 @@ const RegisteredCoursesTab = ({
                     <Button
                         type="primary"
                         onClick={onPayAll}
-                        disabled={!filteredRegisteredData.length}
+                        loading={submitting}
+                        disabled={!filteredRegisteredData.length || submitting}
                     >
                         Thanh toán tất cả
                     </Button>
@@ -255,10 +292,10 @@ const RegisteredCoursesTab = ({
                         bordered
                         loading={loading}
                         size="middle"
-                        scroll={{ x: 1500 }}
+                        scroll={{ x: 1600 }}
                         pagination={{ pageSize: 10 }}
                         dataSource={filteredRegisteredData}
-                        columns={buildColumns(submitting, onPayOne, onCancel)}
+                        columns={buildColumns(submitting, onCancel)}
                     />
                 ) : (
                     <Empty description="Không có môn học đã đăng ký trong học kỳ này" />

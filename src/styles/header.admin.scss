@@ -24,9 +24,6 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        // box-shadow:
-        //     0 1px 2px rgba(0, 0, 0, 0.04),
-        //     0 4px 12px rgba(0, 0, 0, 0.06);
         transition: all 0.2s ease;
 
         .anticon {
@@ -42,9 +39,10 @@
     }
 
     &__right {
-        min-width: 0;
         display: flex;
         align-items: center;
+        gap: 18px;
+        min-width: 0;
     }
 
     &__account {
@@ -63,7 +61,191 @@
         max-width: 220px;
         display: inline-block;
     }
+
+    .ant-badge-count {
+        box-shadow: 0 0 0 2px #fff;
+    }
+
+    // ================= 🔔 NOTIFICATION =================
+
+    &__notification-btn {
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+
+        &:hover {
+            background: #eef2ff;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+
+            .admin-header__bell-icon {
+                color: #6366f1;
+                animation: bellShake 0.6s ease;
+                transform-origin: top center;
+            }
+        }
+    }
+
+    &__bell-icon {
+        font-size: 20px;
+        color: #1f2937;
+        transition: all 0.2s ease;
+
+        &.is-shaking {
+            animation: bellShake 0.8s ease;
+            transform-origin: top center;
+            color: #6366f1;
+        }
+    }
+
+    &__notification-subtitle {
+        font-size: 12px;
+        color: #9ca3af;
+        margin-top: 2px;
+    }
+
+    &__notification-more {
+        margin-top: 6px;
+        font-weight: 500;
+    }
+
+    &__notification-dropdown {
+        width: 360px;
+        max-height: 430px;
+        overflow-y: auto;
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+        padding: 12px;
+    }
+
+    &__notification-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 4px 10px;
+        border-bottom: 1px solid #f0f0f0;
+        margin-bottom: 6px;
+    }
+
+    &__notification-item {
+        padding: 10px 6px !important;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        margin: 5px 0;
+
+        &:hover {
+            background: #f5f7fb;
+            transform: translateY(-1px);
+        }
+
+        &.is-unread {
+            background: #eef4ff;
+
+            .admin-header__notification-title {
+                color: #1677ff;
+            }
+
+            &:hover {
+                background: #e3eeff;
+            }
+        }
+    }
+
+    &__notification-body {
+        width: 100%;
+    }
+
+    &__notification-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    &__notification-title {
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 4px;
+    }
+
+    &__notification-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #1677ff;
+        flex-shrink: 0;
+    }
+
+    &__notification-content {
+        font-size: 13px;
+        color: #6b7280;
+        line-height: 1.4;
+    }
+
+    &__notification-footer {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+
+        .ant-tag {
+            margin-inline-end: 0;
+            font-size: 11px;
+            line-height: 18px;
+        }
+    }
+
+    &__notification-time {
+        font-size: 12px;
+        color: #9ca3af;
+    }
 }
+
+//
+// 🔔 BELL SHAKE ANIMATION
+//
+
+@keyframes bellShake {
+    0% {
+        transform: rotate(0);
+    }
+
+    15% {
+        transform: rotate(12deg);
+    }
+
+    30% {
+        transform: rotate(-12deg);
+    }
+
+    45% {
+        transform: rotate(10deg);
+    }
+
+    60% {
+        transform: rotate(-10deg);
+    }
+
+    75% {
+        transform: rotate(6deg);
+    }
+
+    100% {
+        transform: rotate(0);
+    }
+}
+
+//
+// 📱 RESPONSIVE
+//
 
 @media (max-width: 991.98px) {
     .admin-header {
@@ -84,11 +266,15 @@
         &__trigger {
             width: 38px;
             height: 38px;
-            border-radius: 10px;
         }
 
         &__account {
             padding: 4px 6px;
+        }
+
+        &__notification-dropdown {
+            width: 320px;
+            max-height: 380px;
         }
     }
 }
@@ -98,6 +284,14 @@
         &__trigger {
             width: 36px;
             height: 36px;
+        }
+
+        &__right {
+            gap: 10px;
+        }
+
+        &__notification-dropdown {
+            width: calc(100vw - 24px);
         }
     }
 }

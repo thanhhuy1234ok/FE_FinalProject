@@ -114,9 +114,9 @@ const PaidPaymentsTable = ({ data }: Props) => {
             ),
         },
     ];
-
+    console.log(data);
     return (
-        <Table
+        <Table<IPayment>
             rowKey="id"
             bordered
             columns={columns}

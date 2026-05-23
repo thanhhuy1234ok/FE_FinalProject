@@ -2,67 +2,79 @@ import { useEffect, useState } from "react";
 import { CurrentAppContext } from "./app.context";
 import { PacmanLoader } from "react-spinners";
 import { getAccountAPI } from "@/services/api";
+import { connectSocket, socket } from "@/socket/socket";
 
 type TProps = {
-  children: React.ReactNode;
+    children: React.ReactNode;
 };
 
 export const AppProvider = (props: TProps) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [user, setUser] = useState<IUser | null>(null);
-  const [isAppLoading, setIsAppLoading] = useState<boolean>(true);
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const [user, setUser] = useState<IUser | null>(null);
+    const [isAppLoading, setIsAppLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    const fetchAccount = async () => {
-      try {
-        const res = await getAccountAPI();
+    useEffect(() => {
+        const fetchAccount = async () => {
+            try {
+                const res = await getAccountAPI();
 
-        if (res?.data?.user) {
-          setUser(res.data.user);
-          setIsAuthenticated(true);
-        } else {
-          setUser(null);
-          setIsAuthenticated(false);
-        }
-      } catch {
-        setUser(null);
-        setIsAuthenticated(false);
-      } finally {
-        setIsAppLoading(false);
-      }
-    };
+                if (res?.data?.user) {
+                    setUser(res.data.user);
+                    setIsAuthenticated(true);
 
-    fetchAccount();
-  }, []);
+                    const token = localStorage.getItem("access_token");
 
+                    if (token) {
+                        connectSocket(token);
+                    }
+                } else {
+                    setUser(null);
+                    setIsAuthenticated(false);
+                    socket.disconnect();
+                }
+            } catch {
+                setUser(null);
+                setIsAuthenticated(false);
+                socket.disconnect();
+            } finally {
+                setIsAppLoading(false);
+            }
+        };
 
-  return (
-    <>
-      {isAppLoading === false ? (
-        <CurrentAppContext.Provider
-          value={{
-            isAuthenticated,
-            user,
-            setIsAuthenticated,
-            setUser,
-            isAppLoading,
-            setIsAppLoading,
-          }}
-        >
-          {props.children}
-        </CurrentAppContext.Provider>
-      ) : (
-        <div
-          style={{
-            position: "fixed",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-          }}
-        >
-          <PacmanLoader size={30} color="#36d6b4" />
-        </div>
-      )}
-    </>
-  );
+        fetchAccount();
+
+        return () => {
+            socket.disconnect();
+        };
+    }, []);
+
+    return (
+        <>
+            {isAppLoading === false ? (
+                <CurrentAppContext.Provider
+                    value={{
+                        isAuthenticated,
+                        user,
+                        setIsAuthenticated,
+                        setUser,
+                        isAppLoading,
+                        setIsAppLoading,
+                    }}
+                >
+                    {props.children}
+                </CurrentAppContext.Provider>
+            ) : (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                    }}
+                >
+                    <PacmanLoader size={30} color="#36d6b4" />
+                </div>
+            )}
+        </>
+    );
 };

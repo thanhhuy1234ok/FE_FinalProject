@@ -9,6 +9,7 @@ import { useCurrentApp } from "@/context/use.curent";
 import { adminMenuItems } from "../menu/menu.admin";
 import AdminHeader from "../header/header.admin";
 import { findActiveKey } from "@/helper/findActiveKey";
+import { socket } from "@/socket/socket";
 
 const { Content, Footer, Sider } = Layout;
 const { useBreakpoint } = Grid;
@@ -37,6 +38,7 @@ const LayoutAdmin: React.FC = () => {
                 message.success("Đăng xuất thành công");
                 setIsAuthenticated(false);
                 setUser(null);
+                socket.disconnect();
                 localStorage.removeItem("access_token");
                 navigate("/");
             }

@@ -12,10 +12,14 @@
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
     "@ant-design/pro-components": "^2.8.10",
+    "@fontsource/noto-color-emoji": "^5.2.12",
+    "@fullcalendar/react": "^6.1.20",
+    "@fullcalendar/timegrid": "^6.1.20",
     "@nestjs/mapped-types": "*",
     "antd": "5.29.3",
     "axios": "^1.13.2",
     "dayjs": "^1.11.19",
+    "emoji-picker-react": "^4.19.1",
     "lodash": "^4.17.21",
     "query-string": "^9.3.1",
     "react": "^18.3.1",
@@ -25,6 +29,8 @@
     "react-router-dom": "^7.11.0",
     "react-spinners": "^0.17.0",
     "sass": "^1.97.1",
+    "socket.io-client": "^4.8.3",
+    "streamifier": "^0.1.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

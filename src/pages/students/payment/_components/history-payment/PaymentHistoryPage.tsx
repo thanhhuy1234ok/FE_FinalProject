@@ -7,8 +7,8 @@ const { Title, Text } = Typography;
 
 const PaymentHistoryPage = () => {
     const navigate = useNavigate();
-    const { loading, paidPayments } = usePaymentHistory();
-
+    const { loading, payments } = usePaymentHistory();
+    console.log(payments);
     return (
         <Space direction="vertical" size={16} style={{ width: "100%" }}>
             <div
@@ -38,7 +38,7 @@ const PaymentHistoryPage = () => {
                     border: "1px solid #f0f0f0",
                 }}
             >
-                {paidPayments.length === 0 && !loading ? (
+                {payments.length === 0 && !loading ? (
                     <Empty description="Chưa có phiếu thanh toán nào đã hoàn tất">
                         <Button
                             type="primary"
@@ -48,7 +48,7 @@ const PaymentHistoryPage = () => {
                         </Button>
                     </Empty>
                 ) : (
-                    <PaidPaymentsTable data={paidPayments} />
+                    <PaidPaymentsTable data={payments} />
                 )}
             </div>
         </Space>

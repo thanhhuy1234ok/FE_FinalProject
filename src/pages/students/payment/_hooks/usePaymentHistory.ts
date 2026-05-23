@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { message } from "antd";
-import { getMyPaymentsAPI } from "@/services/api";
+import { getPaymentHistoryAPI } from "@/services/api";
 
 export const usePaymentHistory = () => {
     const [loading, setLoading] = useState(false);
@@ -9,9 +9,14 @@ export const usePaymentHistory = () => {
     const fetchPayments = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await getMyPaymentsAPI();
-            const data = res?.data ?? res ?? [];
-            setPayments(Array.isArray(data) ? data : []);
+            const res = await getPaymentHistoryAPI();
+
+            const raw = res?.data;
+
+            // 🔥 đảm bảo luôn là array
+            const data = Array.isArray(raw) ? raw : raw ? [raw] : [];
+
+            setPayments(data);
         } catch (error: any) {
             message.error(error?.message || "Không thể tải lịch sử thanh toán");
             setPayments([]);
@@ -24,14 +29,9 @@ export const usePaymentHistory = () => {
         fetchPayments();
     }, [fetchPayments]);
 
-    const paidPayments = useMemo(() => {
-        return payments.filter((item) => item.status === "PAID");
-    }, [payments]);
-
     return {
         loading,
         payments,
-        paidPayments,
         fetchPayments,
     };
 };

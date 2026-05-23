@@ -1,4 +1,4 @@
-import { Card, Tag, Typography } from "antd";
+import { Card, Empty, Space, Tag, Typography } from "antd";
 import type { AvailableItem } from "./tab/registation";
 import type { RegisteredItem } from "./tab/registeredCourse";
 
@@ -19,25 +19,42 @@ const DAYS = [
     { key: 8, label: "CN" },
 ];
 
-const LESSONS = Array.from({ length: 12 }, (_, i) => i + 1);
+const LESSON_GROUPS = [
+    {
+        title: "Buổi sáng",
+        lessons: [1, 2, 3, 4],
+    },
+    {
+        title: "Buổi chiều",
+        lessons: [5, 6, 7, 8],
+    },
+    {
+        title: "Buổi tối",
+        lessons: [9, 10, 11, 12],
+    },
+];
+
+type CourseBlock = {
+    id: string;
+    dayOfWeek: number;
+    lessonStart: number;
+    lessonEnd: number;
+    courseCode: string;
+    subjectName: string;
+    teacherName: string;
+    roomName: string;
+    source: "registered" | "selected";
+};
 
 const getCourseBlocks = (
     selectedCourses: AvailableItem[],
     registeredCourses: RegisteredItem[],
-) => {
-    const blocks: Array<{
-        dayOfWeek: number;
-        lessonStart: number;
-        lessonEnd: number;
-        courseCode: string;
-        subjectName: string;
-        teacherName: string;
-        roomName: string;
-        source: "registered" | "selected";
-    }> = [];
+): CourseBlock[] => {
+    const blocks: CourseBlock[] = [];
 
     registeredCourses.forEach((item) => {
         const courseOffering = item?.courseOffering;
+
         const subjectName =
             courseOffering?.teacherSubject?.subject?.name ?? "—";
         const courseCode = courseOffering?.code ?? "—";
@@ -46,6 +63,7 @@ const getCourseBlocks = (
 
         (courseOffering?.schedules ?? []).forEach((schedule: any) => {
             blocks.push({
+                id: `registered-${courseOffering?.id}-${schedule?.id}`,
                 dayOfWeek: schedule?.dayOfWeek ?? 0,
                 lessonStart: schedule?.lessonStart ?? 0,
                 lessonEnd: schedule?.lessonEnd ?? 0,
@@ -59,9 +77,8 @@ const getCourseBlocks = (
     });
 
     selectedCourses.forEach((course) => {
-        const subjectId = course?.teacherSubject?.subject?.id;
+        const subjectId = course?.subject?.id;
 
-        // nếu môn này đã đăng ký rồi thì không add lần 2
         const existedInRegistered = registeredCourses.some(
             (item) =>
                 item?.courseOffering?.teacherSubject?.subject?.id === subjectId,
@@ -69,12 +86,13 @@ const getCourseBlocks = (
 
         if (existedInRegistered) return;
 
-        const subjectName = course?.teacherSubject?.subject?.name ?? "—";
+        const subjectName = course?.subject?.name ?? "—";
         const courseCode = course?.code ?? "—";
-        const teacherName = course?.teacherSubject?.teacher?.user?.name ?? "—";
+        const teacherName = course?.teacher?.user?.name ?? "—";
 
         (course?.schedules ?? []).forEach((schedule: any) => {
             blocks.push({
+                id: `selected-${course?.id}-${schedule?.id}`,
                 dayOfWeek: schedule?.dayOfWeek ?? 0,
                 lessonStart: schedule?.lessonStart ?? 0,
                 lessonEnd: schedule?.lessonEnd ?? 0,
@@ -90,6 +108,18 @@ const getCourseBlocks = (
     return blocks;
 };
 
+const hasConflict = (block: CourseBlock, blocks: CourseBlock[]) => {
+    return blocks.some((other) => {
+        if (other.id === block.id) return false;
+        if (other.dayOfWeek !== block.dayOfWeek) return false;
+
+        return (
+            block.lessonStart <= other.lessonEnd &&
+            other.lessonStart <= block.lessonEnd
+        );
+    });
+};
+
 const WeeklySchedulePreview = ({
     selectedCourses,
     registeredCourses,
@@ -98,209 +128,285 @@ const WeeklySchedulePreview = ({
 
     return (
         <Card
-            title={`Lịch học theo tuần (${registeredCourses.length} môn đã đăng ký, ${selectedCourses.length} môn đang chọn)`}
+            title="Thời khóa biểu dự kiến"
             size="small"
+            extra={
+                <Space wrap>
+                    <Tag color="blue">Đã đăng ký</Tag>
+                    <Tag color="green">Đang chọn</Tag>
+                    <Tag color="red">Trùng lịch</Tag>
+                </Space>
+            }
         >
-            <div style={{ overflowX: "auto" }}>
-                <table
-                    style={{
-                        width: "100%",
-                        borderCollapse: "collapse",
-                        minWidth: 1100,
-                    }}
-                >
-                    <thead>
-                        <tr>
-                            <th
-                                style={{
-                                    border: "1px solid #f0f0f0",
-                                    padding: 12,
-                                    background: "#fafafa",
-                                    minWidth: 100,
-                                    textAlign: "center",
-                                }}
-                            >
-                                Tiết
-                            </th>
-                            {DAYS.map((day) => (
+            {!blocks.length ? (
+                <Empty description="Chưa có môn nào trong thời khóa biểu" />
+            ) : (
+                <div style={{ overflowX: "auto" }}>
+                    <table
+                        style={{
+                            width: "100%",
+                            minWidth: 1100,
+                            borderCollapse: "separate",
+                            borderSpacing: 0,
+                            border: "1px solid #f0f0f0",
+                            borderRadius: 12,
+                            overflow: "hidden",
+                        }}
+                    >
+                        <thead>
+                            <tr>
                                 <th
-                                    key={day.key}
                                     style={{
-                                        border: "1px solid #f0f0f0",
-                                        padding: 12,
+                                        position: "sticky",
+                                        left: 0,
+                                        zIndex: 3,
                                         background: "#fafafa",
-                                        minWidth: 140,
+                                        borderRight: "1px solid #f0f0f0",
+                                        borderBottom: "1px solid #f0f0f0",
+                                        padding: 12,
+                                        minWidth: 100,
                                         textAlign: "center",
                                     }}
                                 >
-                                    {day.label}
+                                    Buổi / Tiết
                                 </th>
-                            ))}
-                        </tr>
-                    </thead>
 
-                    <tbody>
-                        {LESSONS.map((lesson) => (
-                            <tr key={lesson}>
-                                <td
-                                    style={{
-                                        border: "1px solid #f0f0f0",
-                                        padding: 10,
-                                        textAlign: "center",
-                                        fontWeight: 600,
-                                        background: "#fcfcfc",
-                                    }}
-                                >
-                                    Tiết {lesson}
-                                </td>
+                                {DAYS.map((day) => (
+                                    <th
+                                        key={day.key}
+                                        style={{
+                                            background: "#fafafa",
+                                            borderBottom: "1px solid #f0f0f0",
+                                            borderRight: "1px solid #f0f0f0",
+                                            padding: 12,
+                                            minWidth: 150,
+                                            textAlign: "center",
+                                        }}
+                                    >
+                                        {day.label}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
 
-                                {DAYS.map((day) => {
-                                    const matchedBlocks = blocks.filter(
-                                        (block) =>
-                                            block.dayOfWeek === day.key &&
-                                            lesson >= block.lessonStart &&
-                                            lesson <= block.lessonEnd,
-                                    );
-
-                                    return (
+                        <tbody>
+                            {LESSON_GROUPS.map((group) => (
+                                <>
+                                    <tr key={`${group.title}-header`}>
                                         <td
-                                            key={`${day.key}-${lesson}`}
+                                            colSpan={DAYS.length + 1}
                                             style={{
-                                                border: "1px solid #f0f0f0",
-                                                padding: 8,
-                                                verticalAlign: "top",
-                                                height: 90,
-                                                background:
-                                                    matchedBlocks.length > 0
-                                                        ? "#f8fafc"
-                                                        : "#fff",
+                                                background: "#f5f5f5",
+                                                borderBottom:
+                                                    "1px solid #f0f0f0",
+                                                padding: "10px 12px",
+                                                fontWeight: 700,
                                             }}
                                         >
-                                            {matchedBlocks.length ? (
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        flexDirection: "column",
-                                                        gap: 6,
-                                                    }}
-                                                >
-                                                    {matchedBlocks.map(
-                                                        (block, index) => {
-                                                            const isStartLesson =
-                                                                lesson ===
-                                                                block.lessonStart;
-
-                                                            if (!isStartLesson)
-                                                                return null;
-
-                                                            return (
-                                                                <div
-                                                                    key={`${block.courseCode}-${index}`}
-                                                                    style={{
-                                                                        border:
-                                                                            block.source ===
-                                                                            "registered"
-                                                                                ? "1px solid #91caff"
-                                                                                : "1px solid #b7eb8f",
-                                                                        background:
-                                                                            block.source ===
-                                                                            "registered"
-                                                                                ? "#e6f4ff"
-                                                                                : "#f6ffed",
-                                                                        borderRadius: 8,
-                                                                        padding: 8,
-                                                                    }}
-                                                                >
-                                                                    <div
-                                                                        style={{
-                                                                            fontWeight: 700,
-                                                                            marginBottom: 4,
-                                                                        }}
-                                                                    >
-                                                                        {
-                                                                            block.subjectName
-                                                                        }
-                                                                    </div>
-
-                                                                    <div
-                                                                        style={{
-                                                                            marginBottom: 4,
-                                                                        }}
-                                                                    >
-                                                                        <Tag
-                                                                            color={
-                                                                                block.source ===
-                                                                                "registered"
-                                                                                    ? "blue"
-                                                                                    : "green"
-                                                                            }
-                                                                        >
-                                                                            {
-                                                                                block.courseCode
-                                                                            }
-                                                                        </Tag>
-
-                                                                        <Tag
-                                                                            color={
-                                                                                block.source ===
-                                                                                "registered"
-                                                                                    ? "processing"
-                                                                                    : "success"
-                                                                            }
-                                                                        >
-                                                                            {block.source ===
-                                                                            "registered"
-                                                                                ? "Đã đăng ký"
-                                                                                : "Đang chọn"}
-                                                                        </Tag>
-                                                                    </div>
-
-                                                                    <Text
-                                                                        style={{
-                                                                            display:
-                                                                                "block",
-                                                                        }}
-                                                                    >
-                                                                        {`Tiết ${block.lessonStart} - ${block.lessonEnd}`}
-                                                                    </Text>
-
-                                                                    <Text
-                                                                        style={{
-                                                                            display:
-                                                                                "block",
-                                                                        }}
-                                                                    >
-                                                                        GV:{" "}
-                                                                        {
-                                                                            block.teacherName
-                                                                        }
-                                                                    </Text>
-
-                                                                    <Text
-                                                                        style={{
-                                                                            display:
-                                                                                "block",
-                                                                        }}
-                                                                    >
-                                                                        Phòng:{" "}
-                                                                        {
-                                                                            block.roomName
-                                                                        }
-                                                                    </Text>
-                                                                </div>
-                                                            );
-                                                        },
-                                                    )}
-                                                </div>
-                                            ) : null}
+                                            {group.title}
                                         </td>
-                                    );
-                                })}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                                    </tr>
+
+                                    {group.lessons.map((lesson) => (
+                                        <tr key={`${group.title}-${lesson}`}>
+                                            <td
+                                                style={{
+                                                    position: "sticky",
+                                                    left: 0,
+                                                    zIndex: 2,
+                                                    background: "#fcfcfc",
+                                                    borderRight:
+                                                        "1px solid #f0f0f0",
+                                                    borderBottom:
+                                                        "1px solid #f0f0f0",
+                                                    padding: 10,
+                                                    textAlign: "center",
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                Tiết {lesson}
+                                            </td>
+
+                                            {DAYS.map((day) => {
+                                                const matchedBlocks =
+                                                    blocks.filter(
+                                                        (block) =>
+                                                            block.dayOfWeek ===
+                                                                day.key &&
+                                                            lesson ===
+                                                                block.lessonStart,
+                                                    );
+
+                                                return (
+                                                    <td
+                                                        key={`${day.key}-${lesson}`}
+                                                        style={{
+                                                            borderRight:
+                                                                "1px solid #f0f0f0",
+                                                            borderBottom:
+                                                                "1px solid #f0f0f0",
+                                                            padding: 8,
+                                                            verticalAlign:
+                                                                "top",
+                                                            height: 86,
+                                                            background: "#fff",
+                                                        }}
+                                                    >
+                                                        <Space
+                                                            direction="vertical"
+                                                            size={8}
+                                                            style={{
+                                                                width: "100%",
+                                                            }}
+                                                        >
+                                                            {matchedBlocks.map(
+                                                                (block) => {
+                                                                    const conflict =
+                                                                        hasConflict(
+                                                                            block,
+                                                                            blocks,
+                                                                        );
+
+                                                                    const borderColor =
+                                                                        conflict
+                                                                            ? "#ff4d4f"
+                                                                            : block.source ===
+                                                                                "registered"
+                                                                              ? "#91caff"
+                                                                              : "#b7eb8f";
+
+                                                                    const background =
+                                                                        conflict
+                                                                            ? "#fff1f0"
+                                                                            : block.source ===
+                                                                                "registered"
+                                                                              ? "#e6f4ff"
+                                                                              : "#f6ffed";
+
+                                                                    const tagColor =
+                                                                        conflict
+                                                                            ? "red"
+                                                                            : block.source ===
+                                                                                "registered"
+                                                                              ? "blue"
+                                                                              : "green";
+
+                                                                    return (
+                                                                        <div
+                                                                            key={
+                                                                                block.id
+                                                                            }
+                                                                            style={{
+                                                                                border: `1px solid ${borderColor}`,
+                                                                                background,
+                                                                                borderRadius: 10,
+                                                                                padding: 10,
+                                                                                boxShadow:
+                                                                                    "0 2px 8px rgba(0,0,0,0.04)",
+                                                                            }}
+                                                                        >
+                                                                            <div
+                                                                                style={{
+                                                                                    fontWeight: 700,
+                                                                                    marginBottom: 6,
+                                                                                }}
+                                                                            >
+                                                                                {
+                                                                                    block.subjectName
+                                                                                }
+                                                                            </div>
+
+                                                                            <Space
+                                                                                wrap
+                                                                                size={
+                                                                                    4
+                                                                                }
+                                                                                style={{
+                                                                                    marginBottom: 6,
+                                                                                }}
+                                                                            >
+                                                                                <Tag
+                                                                                    color={
+                                                                                        tagColor
+                                                                                    }
+                                                                                >
+                                                                                    {
+                                                                                        block.courseCode
+                                                                                    }
+                                                                                </Tag>
+
+                                                                                <Tag
+                                                                                    color={
+                                                                                        tagColor
+                                                                                    }
+                                                                                >
+                                                                                    {conflict
+                                                                                        ? "Trùng lịch"
+                                                                                        : block.source ===
+                                                                                            "registered"
+                                                                                          ? "Đã đăng ký"
+                                                                                          : "Đang chọn"}
+                                                                                </Tag>
+                                                                            </Space>
+
+                                                                            <Text
+                                                                                style={{
+                                                                                    display:
+                                                                                        "block",
+                                                                                    fontSize: 13,
+                                                                                }}
+                                                                            >
+                                                                                Tiết{" "}
+                                                                                {
+                                                                                    block.lessonStart
+                                                                                }{" "}
+                                                                                -{" "}
+                                                                                {
+                                                                                    block.lessonEnd
+                                                                                }
+                                                                            </Text>
+
+                                                                            <Text
+                                                                                style={{
+                                                                                    display:
+                                                                                        "block",
+                                                                                    fontSize: 13,
+                                                                                }}
+                                                                            >
+                                                                                GV:{" "}
+                                                                                {
+                                                                                    block.teacherName
+                                                                                }
+                                                                            </Text>
+
+                                                                            <Text
+                                                                                style={{
+                                                                                    display:
+                                                                                        "block",
+                                                                                    fontSize: 13,
+                                                                                }}
+                                                                            >
+                                                                                Phòng:{" "}
+                                                                                {
+                                                                                    block.roomName
+                                                                                }
+                                                                            </Text>
+                                                                        </div>
+                                                                    );
+                                                                },
+                                                            )}
+                                                        </Space>
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))}
+                                </>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </Card>
     );
 };

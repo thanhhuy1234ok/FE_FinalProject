@@ -25,7 +25,6 @@ const StudentCourseRegistration = () => {
         handleClearSearch,
         handleRegisterSelected,
         handleCancel,
-        handlePayOne,
         handlePayAll,
     } = useStudentCourseRegistration();
 
@@ -97,7 +96,6 @@ const StudentCourseRegistration = () => {
                                         submitting={submitting}
                                         onChangeTerm={setSelectedRegisteredTerm}
                                         onPayAll={handlePayAll}
-                                        onPayOne={handlePayOne}
                                         onCancel={handleCancel}
                                     />
                                 ),

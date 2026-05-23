@@ -4,6 +4,7 @@ import {
     Empty,
     Input,
     message,
+    Popconfirm,
     Space,
     Table,
     Tag,
@@ -11,7 +12,7 @@ import {
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { SearchOutlined } from "@ant-design/icons";
-import type { Key, ReactNode } from "react";
+import { type Key, type ReactNode } from "react";
 import WeeklySchedulePreview from "../WeeklySchedulePreview";
 import type { RegisteredItem } from "./registeredCourse";
 import { checkRegisterCourseConflictAPI } from "@/services/api";
@@ -31,35 +32,39 @@ export type ScheduleItem = {
 
 export type AvailableItem = {
     id: number;
-    code?: string;
-    maxStudents?: number;
-    registeredCount?: number;
-    remainingSlots?: number;
-    alreadyRegistered?: boolean;
+    code: string;
+    credits: number;
+    maxStudents: number;
+    registeredCount: number;
+    remainingSlots: number | null;
+    isFull: boolean;
+    isRegistered: boolean;
+    isSameSubjectRegistered?: boolean;
     canRegister?: boolean;
-    status?: string;
-    schedules?: ScheduleItem[];
-    term?: {
-        id?: number;
-        semester?: string;
-        year?: number;
+    schedules: ScheduleItem[];
+    subject: {
+        id: number;
+        name: string;
+        code: string;
+        credit: number;
+    };
+    teacher: {
+        id: number;
+        user_id: string;
+        user?: {
+            id?: string;
+            name?: string;
+            email?: string;
+        };
+    };
+    term: {
+        id: number;
+        year: number;
+        semester: string;
     };
     adminClass?: {
         code?: string;
         name?: string;
-    };
-    teacherSubject?: {
-        subject?: {
-            id?: number;
-            code?: string;
-            name?: string;
-            credits?: number;
-        };
-        teacher?: {
-            user?: {
-                name?: string;
-            };
-        };
     };
 };
 
@@ -125,7 +130,7 @@ const renderLesson = (schedules?: ScheduleItem[]): ReactNode => {
                 <Text key={`${schedule?.id ?? index}-lesson`}>
                     Tiết {schedule?.lessonStart ?? "—"}
                     {schedule?.lessonEnd &&
-                    schedule?.lessonEnd !== schedule?.lessonStart
+                    schedule.lessonEnd !== schedule.lessonStart
                         ? ` - ${schedule.lessonEnd}`
                         : ""}
                 </Text>
@@ -149,13 +154,13 @@ const buildAvailableColumns = (
         title: "Mã môn",
         key: "subjectCode",
         width: 120,
-        render: (_, record) => record?.teacherSubject?.subject?.code || "—",
+        render: (_, record) => record?.subject?.code || "—",
     },
     {
         title: "Tên môn",
         key: "subjectName",
         width: 220,
-        render: (_, record) => record?.teacherSubject?.subject?.name || "—",
+        render: (_, record) => record?.subject?.name || "—",
     },
     {
         title: "Thứ",
@@ -173,8 +178,7 @@ const buildAvailableColumns = (
         title: "Giảng viên",
         key: "teacherName",
         width: 180,
-        render: (_, record) =>
-            record?.teacherSubject?.teacher?.user?.name || "—",
+        render: (_, record) => record?.teacher?.user?.name || "—",
     },
     {
         title: "Kỳ học",
@@ -182,7 +186,9 @@ const buildAvailableColumns = (
         width: 130,
         render: (_, record) =>
             record?.term
-                ? `${record.term?.semester ?? ""}${record.term?.year ? ` - ${record.term.year}` : ""}`
+                ? `${record.term.semester ?? ""}${
+                      record.term.year ? ` - ${record.term.year}` : ""
+                  }`
                 : "—",
     },
     {
@@ -197,30 +203,41 @@ const buildAvailableColumns = (
         key: "remainingSlots",
         width: 110,
         align: "center",
-        render: (_, record) => record?.remainingSlots ?? 0,
+        render: (_, record) =>
+            record?.remainingSlots === null
+                ? "Không giới hạn"
+                : record.remainingSlots,
     },
     {
         title: "Trạng thái",
         key: "status",
-        width: 170,
+        width: 180,
         render: (_, record) => {
-            const subjectId = record?.teacherSubject?.subject?.id;
+            const subjectId = record?.subject?.id;
             const isChecked = selectedRowKeys.includes(record.id);
-            const isSameSubjectAlreadySelected =
+            const isSameSubjectSelected =
                 !!subjectId && selectedSubjectIds.has(subjectId) && !isChecked;
 
-            if (record?.alreadyRegistered) {
-                return <Tag color="blue">Đã đăng ký</Tag>;
+            if (record?.isRegistered) {
+                return <Tag color="blue">Đã đăng ký lớp này</Tag>;
             }
-            if ((record?.remainingSlots ?? 0) <= 0) {
+
+            if (record?.isSameSubjectRegistered) {
+                return <Tag color="gold">Đã đăng ký môn này</Tag>;
+            }
+
+            if (record?.isFull) {
                 return <Tag color="red">Hết chỗ</Tag>;
             }
+
             if (record?.canRegister === false) {
                 return <Tag color="orange">Không khả dụng</Tag>;
             }
-            if (isSameSubjectAlreadySelected) {
-                return <Tag color="gold">Đã chọn lớp khác</Tag>;
+
+            if (isSameSubjectSelected) {
+                return <Tag color="gold">Đã chọn môn này</Tag>;
             }
+
             return <Tag color="green">Có thể chọn</Tag>;
         },
     },
@@ -240,13 +257,13 @@ const buildSelectedColumns = (
         title: "Mã môn",
         key: "subjectCode",
         width: 120,
-        render: (_, record) => record?.teacherSubject?.subject?.code || "—",
+        render: (_, record) => record?.subject?.code || "—",
     },
     {
         title: "Tên môn",
         key: "subjectName",
         width: 220,
-        render: (_, record) => record?.teacherSubject?.subject?.name || "—",
+        render: (_, record) => record?.subject?.name || "—",
     },
     {
         title: "Thứ",
@@ -264,8 +281,7 @@ const buildSelectedColumns = (
         title: "Giảng viên",
         key: "teacherName",
         width: 180,
-        render: (_, record) =>
-            record?.teacherSubject?.teacher?.user?.name || "—",
+        render: (_, record) => record?.teacher?.user?.name || "—",
     },
     {
         title: "Lớp hành chính",
@@ -279,7 +295,10 @@ const buildSelectedColumns = (
         key: "remainingSlots",
         width: 110,
         align: "center",
-        render: (_, record) => record?.remainingSlots ?? 0,
+        render: (_, record) =>
+            record?.remainingSlots === null
+                ? "Không giới hạn"
+                : record.remainingSlots,
     },
     {
         title: "Bỏ chọn",
@@ -379,18 +398,13 @@ const RegistrationTab = ({
                                             ),
                                         );
 
-                                    const data =
-                                        res?.data ??
-                                        res?.data?.data ??
-                                        res?.data ??
-                                        res;
-
-                                    const result = data?.data ?? data;
+                                    const result =
+                                        res?.data?.data ?? res?.data ?? res;
 
                                     if (!result?.canRegister) {
                                         message.error(
                                             result?.message ||
-                                                "Môn học bị trùng lịch",
+                                                "Không thể chọn môn học này",
                                         );
                                         return;
                                     }
@@ -403,7 +417,7 @@ const RegistrationTab = ({
                                     let msg =
                                         error?.response?.data?.message ||
                                         error?.message ||
-                                        "Kiểm tra trùng lịch thất bại";
+                                        "Kiểm tra đăng ký thất bại";
 
                                     if (Array.isArray(msg)) msg = msg[0];
 
@@ -411,22 +425,23 @@ const RegistrationTab = ({
                                 }
                             },
                             getCheckboxProps: (record) => {
-                                const subjectId =
-                                    record?.teacherSubject?.subject?.id;
+                                const subjectId = record?.subject?.id;
                                 const isChecked = selectedRowKeys.includes(
                                     record.id,
                                 );
-                                const isSameSubjectAlreadySelected =
+
+                                const isSameSubjectSelected =
                                     !!subjectId &&
                                     selectedSubjectIds.has(subjectId) &&
                                     !isChecked;
 
                                 return {
                                     disabled:
-                                        record?.alreadyRegistered ||
+                                        record?.isRegistered ||
+                                        record?.isSameSubjectRegistered ||
+                                        record?.isFull ||
                                         record?.canRegister === false ||
-                                        (record?.remainingSlots ?? 0) <= 0 ||
-                                        isSameSubjectAlreadySelected,
+                                        isSameSubjectSelected,
                                 };
                             },
                         }}
@@ -447,14 +462,21 @@ const RegistrationTab = ({
                         >
                             Xóa tất cả
                         </Button>
-                        <Button
-                            type="primary"
-                            onClick={onRegisterSelected}
-                            disabled={!selectedCourses.length || submitting}
-                            loading={submitting}
+
+                        <Popconfirm
+                            title="Xác nhận đăng ký các môn đã chọn?"
+                            okText="Đồng ý"
+                            cancelText="Hủy"
+                            onConfirm={onRegisterSelected}
                         >
-                            Đăng ký
-                        </Button>
+                            <Button
+                                type="primary"
+                                loading={submitting}
+                                disabled={!selectedCourses.length || submitting}
+                            >
+                                Đăng ký
+                            </Button>
+                        </Popconfirm>
                     </Space>
                 }
             >

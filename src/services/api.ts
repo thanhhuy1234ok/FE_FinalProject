@@ -330,6 +330,18 @@ export const getLessonByCourseOfferingAPI = (courseOfferingId: number) => {
     return axios.get(`/api/v1/lessons/course-offering/${courseOfferingId}`);
 };
 
+export const getMyTeachingCoursesAPI = (termId?: number) => {
+    return axios.get("/api/v1/course-offering/teacher/my-courses", {
+        params: {
+            termId,
+        },
+    });
+};
+
+export const getTeacherCourseDetailAPI = (courseId: number | string) => {
+    return axios.get(`/api/v1/course-offering/teacher/my-courses/${courseId}`);
+};
+
 //** SCHEDULE */
 export const getSchedulesAPI = (query: string) => {
     return axios.get<IBackendRes<IModelPaginate<any>>>(
@@ -375,29 +387,29 @@ export const previewAdminClassAPI = (
 
 export const getAvailableCourseOfferingsForStudentAPI = (query: string) => {
     return axios.get<IBackendRes<IModelPaginate<any>>>(
-        `/api/v1/course-registrations/available?${query}`,
+        `/api/v1/course-registrations/open-offerings?${query}`,
     );
 };
-
-// export const getAvailableCourseOfferingsForStudentAPI = (termId?: number) => {
-//     const query = termId ? `?termId=${termId}` : "";
-//     return axios.get(`/api/v1/course-registrations/available${query}`);
-// };
 
 export const getMyCourseRegistrationsAPI = (query: string) => {
     return axios.get<IBackendRes<any>>(
-        `/api/v1/course-registrations/my?${query}`,
+        `/api/v1/course-registrations/registrations-me?${query}`,
     );
 };
 
-export const registerCourseAPI = (courseOfferingId: number) => {
-    return axios.post<IBackendRes<any>>("/api/v1/course-registrations", {
-        courseOfferingId,
-    });
+export const registerCourseAPI = (courseOfferingIds: number[]) => {
+    return axios.post<IBackendRes<any>>(
+        "/api/v1/course-registrations/register",
+        {
+            courseOfferingIds,
+        },
+    );
 };
 
 export const cancelCourseRegistrationAPI = (id: number) => {
-    return axios.delete<IBackendRes<any>>(`/api/v1/course-registrations/${id}`);
+    return axios.patch<IBackendRes<any>>(
+        `/api/v1/course-registrations/${id}/cancel`,
+    );
 };
 
 export const checkRegisterCourseConflictAPI = (
@@ -410,28 +422,253 @@ export const checkRegisterCourseConflictAPI = (
     });
 };
 
-export const getMyCurrentPaymentAPI = async () => {
-    return axios.get("/api/v1/payment/my-current");
-};
-
 export const payPaymentAPI = async (
     paymentId: number,
     body: {
-        paymentMethod: "CASH" | "BANK_TRANSFER" | "MOMO";
+        paymentMethod: "CASH" | "BANK_TRANSFER" | "MOMO" | "VNPAY";
         note?: string;
     },
 ) => {
-    return axios.patch(`/api/v1/payment/${paymentId}/pay`, body);
+    return axios.patch(`/api/v1/payments/${paymentId}/pay`, body);
 };
 
 export const getMyPaymentsAPI = async () => {
-    return axios.get("/api/v1/payment/my-payments");
+    return axios.get<IBackendRes<any>>("/api/v1/payments/registered-courses");
+};
+
+export const createInvoiceAPI = async () => {
+    return axios.post<IBackendRes<any>>(`/api/v1/payments/invoice`);
+};
+
+export const getPaymentHistoryAPI = async () => {
+    return axios.get<IBackendRes<any>>("/api/v1/payments/history");
 };
 
 export const getPaymentDetailAPI = async (paymentId: number) => {
-    return axios.get(`/api/v1/payment/${paymentId}`);
+    return axios.get<IBackendRes<any>>(`/api/v1/payments/${paymentId}`);
 };
 
 export const getMyLessonsByDateAPI = (date: string) => {
     return axios.get(`/api/v1/lessons/my-lessons-by-date?date=${date}`);
+};
+
+export const createVNPayUrlAPI = (paymentId: number) => {
+    return axios.post(`/api/v1/payments/${paymentId}/vnpay/create-url`);
+};
+
+export const updatePaymentOrderAPI = (status: string, paymentRef: any) => {
+    return axios.patch(`/api/v1/payments`, { status, paymentRef });
+};
+
+export const returnURLVerifyPaymentAPI = (query: string) => {
+    return axios.get(`/api/v1/payments/vnpay-return?${query}`);
+};
+
+export const getMyTimeTableAPI = async () => {
+    return axios.get<IBackendRes<any>>("/api/v1/schedules/my-timetable");
+};
+
+export const getTeacherLessonsByDateAPI = (date: string) => {
+    return axios.get<IBackendRes<any>>(`/api/v1/lessons/teacher/by-date`, {
+        params: { date },
+    });
+};
+
+export const getTeacherLessonDetailAPI = (lessonId: number) => {
+    return axios.get<IBackendRes<any>>(`/api/v1/lessons/${lessonId}`);
+};
+
+export const getTeacherLessonStudentsAPI = (lessonId: number) => {
+    return axios.get<IBackendRes<any>>(
+        `/api/v1/lessons/teacher/${lessonId}/students`,
+    );
+};
+
+export const markLessonAttendanceManualAPI = (
+    lessonId: number,
+    data: {
+        registrationId: number;
+        status: "PRESENT" | "ABSENT" | "LATE";
+    },
+) => {
+    return axios.post(
+        `/api/v1/attendance/teacher/${lessonId}/attendance/manual`,
+        data,
+    );
+};
+
+export const createAttendanceQrAPI = (
+    lessonId: number,
+    data?: {
+        latitude?: number;
+        longitude?: number;
+    },
+) => {
+    return axios.post(`/api/v1/attendance/lessons/${lessonId}/qr`, data);
+};
+
+export const getTeacherTimeTableAPI = (params?: {
+    date?: string;
+    from?: string;
+    to?: string;
+}) => {
+    return axios.get<IBackendRes<any>>("/api/v1/schedules/timetable", {
+        params,
+    });
+};
+
+export const getMyNotificationsAPI = () => {
+    return axios.get<IBackendRes<any>>("/api/v1/notification/my");
+};
+
+export const markNotificationAsReadAPI = (id: number) => {
+    return axios.patch(`/api/v1/notification/${id}/read`);
+};
+
+export const markAllNotificationsAsReadAPI = () => {
+    return axios.patch("/api/v1/notification/read-all");
+};
+
+export const markAllNotificationsAsReadALLAPI = () => {
+    return axios.patch("/api/v1/notification/read-all");
+};
+
+export const uploadCourseDocumentAPI = (
+    courseOfferingId: number,
+    formData: FormData,
+) => {
+    return axios.post(
+        `/api/v1/documents/course-offering/${courseOfferingId}/upload`,
+        formData,
+        {
+            withCredentials: true,
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        },
+    );
+};
+
+export const getCourseDocumentsAPI = (courseOfferingId: number) => {
+    return axios.get(`/api/v1/documents/course-offering/${courseOfferingId}`);
+};
+
+export const deleteCourseDocumentAPI = (documentId: number) => {
+    return axios.delete(`/api/v1/documents/${documentId}`);
+};
+
+export const getMyClassesAPI = () => {
+    return axios.get(`/api/v1/course-registrations/my-classes`, {
+        withCredentials: true,
+    });
+};
+
+export const getMyClassDetailAPI = (courseId: number) => {
+    return axios.get(`/api/v1/course-registrations/my-classes/${courseId}`, {
+        withCredentials: true,
+    });
+};
+
+export const getTeacherTodaySchedulesAPI = () => {
+    return axios.get("/api/v1/schedules/teacher/today");
+};
+
+export const getTeachingCoursesAPI = () => {
+    return axios.get("/api/v1/schedules/teacher/courses");
+};
+
+export const getTeachingSessionsAPI = (fromDate?: string, toDate?: string) => {
+    return axios.get("/api/v1/lessons/teacher/teaching-sessions", {
+        params: {
+            fromDate,
+            toDate,
+        },
+    });
+};
+
+export const getMyConversationsAPI = () => {
+    return axios.get("/api/v1/chat-app");
+};
+
+export const createCourseConversationAPI = (courseOfferingId: number) => {
+    return axios.post(`/api/v1/chat-app/course/${courseOfferingId}`);
+};
+
+export const createGroupConversationAPI = (data: {
+    name: string;
+    memberIds: string[];
+}) => {
+    return axios.post("/api/v1/chat-app/group", data);
+};
+
+export const getConversationMessagesAPI = (conversationId: number) => {
+    return axios.get(`/api/v1/chat-app/${conversationId}/messages`);
+};
+
+export const sendMessageAPI = (
+    conversationId: number,
+    data: {
+        content: string;
+        imgUrl?: string;
+    },
+) => {
+    return axios.post(`/api/v1/chat-app/${conversationId}/messages`, data);
+};
+
+export const seenConversationAPI = (conversationId: number) => {
+    return axios.patch(`/api/v1/chat-app/${conversationId}/seen`);
+};
+
+export const uploadChatFileAPI = (data: FormData) => {
+    return axios.post("/api/v1/chat-app/upload-file", data, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+};
+
+export const updateGradeAPI = (data: {
+    gradeId: number;
+    midtermScore: number;
+    finalScore: number;
+}) => {
+    return axios.patch("/api/v1/grades", data);
+};
+export const getMyStudyResultsAPI = (query: any) => {
+    return axios.get("/api/v1/grades/my-results", { params: query });
+};
+
+export const publishGradesAPI = (courseOfferingId: number) => {
+    return axios.patch(`/api/v1/grades/publish/${courseOfferingId}`);
+};
+export const getTeacherProfileAPI = () => {
+    return axios.get<IBackendRes<any>>("/api/v1/users/teachers/profile");
+};
+
+export const getStudentDashboardSummaryAPI = () => {
+    return axios.get("/api/v1/users/dashboard/summary");
+};
+
+export const getStudentTodaySchedulesAPI = () => {
+    return axios.get("/api/v1/users/dashboard/today-schedules");
+};
+
+export const getStudentCourseProgressAPI = () => {
+    return axios.get("/api/v1/users/dashboard/course-progress");
+};
+
+export const getStudentLatestGradesAPI = () => {
+    return axios.get("/api/v1/users/dashboard/latest-grades");
+};
+
+export const getStudentDeadlinesAPI = () => {
+    return axios.get("/api/v1/users/dashboard/deadlines");
+};
+
+export const getMyFindStudyResultsAPI = (query = "") => {
+    const url = query
+        ? `/api/v1/grades/my-study-results?${query}`
+        : `/api/v1/grades/my-study-results`;
+
+    return axios.get(url);
 };

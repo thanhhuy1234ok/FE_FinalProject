@@ -381,10 +381,6 @@ declare global {
         courseOffering?: ICourseOffering;
     }
 
-    export type TPaymentStatus = "PENDING" | "PAID" | "OVERDUE" | "CANCELLED";
-    export type TPaymentItemStatus = "ACTIVE" | "CANCELLED";
-    export type TPaymentMethod = "CASH" | "BANK_TRANSFER" | "MOMO";
-
     interface IPaymentSubject {
         id: number;
         name: string;
@@ -472,6 +468,36 @@ declare global {
         student: IPaymentStudent;
         term: IPaymentTerm;
         items: IPaymentItem[];
+    }
+
+    interface IStudyResult {
+        id: number;
+        registrationId: number;
+
+        courseOfferingId: number;
+        courseCode: string;
+
+        subjectId: number;
+        subjectCode: string;
+        subjectName: string;
+        credit: number;
+
+        teacherName?: string;
+
+        termId: number;
+        semester: string;
+        year: number;
+
+        adminClassName?: string;
+
+        attendanceScore: number;
+        midtermScore: number;
+        finalScore: number;
+        totalScore: number;
+
+        letterGrade: string | null;
+        isPassed: boolean;
+        isPublished: boolean;
     }
 }
 

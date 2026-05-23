@@ -8,17 +8,22 @@ import {
 } from "@/services/api";
 import type { AvailableItem } from "../_components/tab/registation";
 import type { RegisteredItem } from "../_components/tab/registeredCourse";
+import { useNavigate } from "react-router-dom";
 
 const getTermLabel = (term?: { semester?: string; year?: number }) => {
     if (!term) return "—";
+
     return (
-        `${term?.semester ?? ""}${term?.year ? ` - ${term.year}` : ""}`.trim() ||
-        "—"
+        `${term?.semester ?? ""}${
+            term?.year ? ` - ${term.year}` : ""
+        }`.trim() || "—"
     );
 };
 
 const normalizeArray = (res: any) => {
-    const arr = res?.data?.result ?? res?.result ?? res?.data ?? [];
+    const arr =
+        res?.data?.data ?? res?.data?.result ?? res?.result ?? res?.data ?? [];
+
     return Array.isArray(arr) ? arr : [];
 };
 
@@ -31,6 +36,8 @@ export const useStudentCourseRegistration = () => {
     const [keyword, setKeyword] = useState("");
     const [selectedRegisteredTerm, setSelectedRegisteredTerm] =
         useState<string>("all");
+
+    const navigate = useNavigate();
 
     const getErrorMessage = (error: any, fallback: string) => {
         const msg =
@@ -60,7 +67,7 @@ export const useStudentCourseRegistration = () => {
             const safeAvailableList = normalizeArray(availableRes);
             const safeRegisteredList = normalizeArray(registeredRes);
 
-            const registeredSubjectIds = new Set(
+            const registeredSubjectIds = new Set<number>(
                 safeRegisteredList
                     .map(
                         (item: RegisteredItem) =>
@@ -71,14 +78,30 @@ export const useStudentCourseRegistration = () => {
 
             const normalizedAvailableData: AvailableItem[] =
                 safeAvailableList.map((item: AvailableItem) => {
-                    const subjectId = item?.teacherSubject?.subject?.id;
+                    const subjectId = item?.subject?.id;
+                    const isRegistered = !!item?.isRegistered;
+
+                    const isSameSubjectRegistered =
+                        !isRegistered &&
+                        !!subjectId &&
+                        registeredSubjectIds.has(subjectId);
+
+                    const isFull = !!item?.isFull;
 
                     return {
                         ...item,
-                        alreadyRegistered:
-                            item?.alreadyRegistered ||
-                            (!!subjectId &&
-                                registeredSubjectIds.has(subjectId)),
+
+                        // chỉ đúng lớp đã đăng ký
+                        isRegistered,
+
+                        // lớp khác nhưng cùng môn đã đăng ký
+                        isSameSubjectRegistered,
+
+                        canRegister:
+                            item?.canRegister ??
+                            (!isRegistered &&
+                                !isSameSubjectRegistered &&
+                                !isFull),
                     };
                 });
 
@@ -105,7 +128,7 @@ export const useStudentCourseRegistration = () => {
     const selectedSubjectIds = useMemo(() => {
         return new Set(
             selectedCourses
-                .map((item) => item?.teacherSubject?.subject?.id)
+                .map((item) => item?.subject?.id)
                 .filter((id): id is number => !!id),
         );
     }, [selectedCourses]);
@@ -116,7 +139,9 @@ export const useStudentCourseRegistration = () => {
         registeredData.forEach((item) => {
             const term = item?.courseOffering?.term;
             const termId = term?.id;
+
             if (!termId) return;
+
             map.set(String(termId), getTermLabel(term));
         });
 
@@ -144,7 +169,8 @@ export const useStudentCourseRegistration = () => {
             availableData
                 .filter(
                     (item) =>
-                        !item?.alreadyRegistered &&
+                        !item?.isRegistered &&
+                        !item?.isFull &&
                         item?.canRegister !== false &&
                         (item?.remainingSlots ?? 0) > 0,
                 )
@@ -160,6 +186,7 @@ export const useStudentCourseRegistration = () => {
         const hasSelectedTerm = registeredTermOptions.some(
             (item) => item.value === selectedRegisteredTerm,
         );
+
         if (!hasSelectedTerm) {
             setSelectedRegisteredTerm("all");
         }
@@ -184,45 +211,26 @@ export const useStudentCourseRegistration = () => {
             setSubmitting(true);
 
             const ids = selectedRowKeys.map(Number);
-            const results = await Promise.allSettled(
-                ids.map((id) => registerCourseAPI(id)),
+            const res = await registerCourseAPI(ids);
+
+            const registrations =
+                res?.data?.registrations ??
+                res?.data?.data?.registrations ??
+                res?.data?.data ??
+                [];
+
+            message.success(
+                `Đăng ký thành công ${
+                    Array.isArray(registrations)
+                        ? registrations.length
+                        : ids.length
+                } môn học`,
             );
-
-            const successCount = results.filter(
-                (item) => item.status === "fulfilled",
-            ).length;
-            const failCount = results.length - successCount;
-
-            if (successCount > 0 && failCount === 0) {
-                message.success(`Đăng ký thành công ${successCount} môn học`);
-            } else if (successCount > 0) {
-                message.warning(
-                    `Đăng ký thành công ${successCount} môn, thất bại ${failCount} môn`,
-                );
-            } else {
-                message.error(
-                    //@ts-ignore
-                    results.map((r) => r.reason.message).join(", ") ||
-                        "Đăng ký thất bại",
-                );
-            }
 
             setSelectedRowKeys([]);
             await fetchData(keyword);
         } catch (error: any) {
-            console.log("REGISTER ERROR:", error);
-            console.log("REGISTER ERROR RESPONSE:", error?.response?.data);
-
-            let msg =
-                error?.response?.data?.message ||
-                error?.message ||
-                "Đăng ký thất bại";
-
-            if (Array.isArray(msg)) {
-                msg = msg[0];
-            }
-
-            message.error(msg);
+            message.error(getErrorMessage(error, "Đăng ký thất bại"));
         } finally {
             setSubmitting(false);
         }
@@ -259,6 +267,12 @@ export const useStudentCourseRegistration = () => {
         message.success(
             `Đã tạo thanh toán cho ${filteredRegisteredData.length} môn học`,
         );
+
+        navigate("/payment", {
+            state: {
+                courses: filteredRegisteredData,
+            },
+        });
     };
 
     return {

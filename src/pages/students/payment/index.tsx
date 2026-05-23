@@ -1,41 +1,136 @@
 import {
     Alert,
     Button,
+    Card,
     Col,
     Empty,
-    Result,
     Row,
     Space,
     Spin,
+    Statistic,
+    Table,
+    Tag,
     Typography,
 } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import { useNavigate } from "react-router-dom";
-import dayjs from "dayjs";
-import { usePaymentPage } from "./_hooks/usePaymentPage";
-import PaymentInfoCard from "./_components/PaymentInfoCard";
+import {
+    usePaymentPage,
+    type PaymentCourseItem,
+} from "./_hooks/usePaymentPage";
+import PaymentMethodCard, {
+    type PaymentMethod,
+} from "./_components/PaymentActionCard";
+import { useState } from "react";
+import PaymentHeaderCard from "./_components/PaymentHeaderCard";
 import PaymentSummaryCard from "./_components/PaymentSummaryCard";
-import PaymentItemsTable from "./_components/PaymentItemsTable";
-import PaymentActionCard from "./_components/PaymentActionCard";
+import PaymentCourseTableCard from "./_components/PaymentCourseTableCard";
 
 const { Title, Text } = Typography;
 
+const formatCurrency = (value?: number | string) =>
+    new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+    }).format(Number(value || 0));
+
 const PaymentPage = () => {
     const navigate = useNavigate();
-
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("VNPAY");
     const {
         loading,
         paying,
-        payment,
-        paymentMethod,
-        setPaymentMethod,
-        note,
-        setNote,
-        activeItems,
+        items,
         totalCredits,
         totalAmount,
         fetchPayment,
         onPay,
+        dueDate,
     } = usePaymentPage();
+
+    const columns: ColumnsType<PaymentCourseItem> = [
+        {
+            title: "STT",
+            width: 40,
+            align: "center",
+            render: (_value, _record, index) => index + 1,
+        },
+        {
+            title: "Mã LHP",
+            dataIndex: "courseCode",
+            width: 180,
+            render: (value) => <Text strong>{value || "--"}</Text>,
+        },
+        {
+            title: "Môn học",
+            key: "subject",
+            width: 220,
+            render: (_, record) => (
+                <div>
+                    <Text strong>{record.subject?.name || "--"}</Text>
+                    <br />
+                    <Text type="secondary">{record.subject?.code || "--"}</Text>
+                </div>
+            ),
+        },
+        {
+            title: "Giảng viên",
+            key: "teacher",
+            width: 170,
+            render: (_, record) => record.teacher?.name || "--",
+        },
+        {
+            title: "Kỳ học",
+            key: "term",
+            width: 130,
+            render: (_, record) =>
+                record.term
+                    ? `${record.term.semester} - ${record.term.year}`
+                    : "--",
+        },
+        {
+            title: "Tín chỉ",
+            key: "credit",
+            width: 50,
+            align: "center",
+            render: (_, record) => record.subject?.credit ?? 0,
+        },
+        {
+            title: "Đơn giá",
+            dataIndex: "unitPrice",
+            width: 130,
+            align: "right",
+            render: (value) => formatCurrency(value),
+        },
+        {
+            title: "Thành tiền",
+            dataIndex: "amount",
+            width: 160,
+            align: "right",
+            render: (value) => <Text strong>{formatCurrency(value)}</Text>,
+        },
+        {
+            title: "Trạng thái",
+            key: "status",
+            width: 160,
+            align: "center",
+            render: (_, record) => {
+                if (!record.payment) {
+                    return <Tag color="default">Chưa thanh toán</Tag>;
+                }
+
+                if (record.payment.status === "PENDING") {
+                    return <Tag color="gold">Chờ thanh toán</Tag>;
+                }
+
+                if (record.payment.status === "FAILED") {
+                    return <Tag color="red">Thanh toán lỗi</Tag>;
+                }
+
+                return <Tag>{record.payment.status}</Tag>;
+            },
+        },
+    ];
 
     if (loading) {
         return (
@@ -43,8 +138,8 @@ const PaymentPage = () => {
                 style={{
                     minHeight: 400,
                     display: "flex",
-                    justifyContent: "center",
                     alignItems: "center",
+                    justifyContent: "center",
                 }}
             >
                 <Spin size="large" />
@@ -52,149 +147,55 @@ const PaymentPage = () => {
         );
     }
 
-    if (!payment) {
+    if (!items.length) {
         return (
             <Empty
-                description="Hiện chưa có phiếu thanh toán"
+                description="Không có môn học nào cần thanh toán"
                 style={{ marginTop: 80 }}
             >
-                <Button
-                    onClick={() => navigate("/student/course-registration")}
-                >
-                    Quay lại đăng ký môn
-                </Button>
+                <Space>
+                    <Button onClick={fetchPayment}>Tải lại</Button>
+                    <Button
+                        type="primary"
+                        onClick={() => navigate("/student/course-registration")}
+                    >
+                        Quay lại đăng ký môn
+                    </Button>
+                </Space>
             </Empty>
-        );
-    }
-
-    if (payment.status === "PAID") {
-        return (
-            <Result
-                status="success"
-                title="Phiếu thanh toán đã được xử lý thành công"
-                subTitle={`Mã phiếu: ${payment.code}`}
-                extra={[
-                    <Button
-                        key="registered"
-                        type="primary"
-                        onClick={() => navigate("/student/course-registration")}
-                    >
-                        Quay lại đăng ký môn
-                    </Button>,
-                ]}
-            />
-        );
-    }
-
-    if (payment.status === "OVERDUE") {
-        return (
-            <Result
-                status="warning"
-                title="Phiếu thanh toán đã quá hạn"
-                subTitle={`Mã phiếu: ${payment.code}`}
-                extra={[
-                    <Button key="reload" onClick={fetchPayment}>
-                        Tải lại
-                    </Button>,
-                    <Button
-                        key="back"
-                        type="primary"
-                        onClick={() => navigate("/student/course-registration")}
-                    >
-                        Quay lại đăng ký môn
-                    </Button>,
-                ]}
-            />
-        );
-    }
-
-    if (payment.status === "CANCELLED") {
-        return (
-            <Result
-                status="info"
-                title="Phiếu thanh toán đã bị hủy"
-                subTitle={`Mã phiếu: ${payment.code}`}
-                extra={[
-                    <Button
-                        key="back"
-                        type="primary"
-                        onClick={() => navigate("/student/course-registration")}
-                    >
-                        Quay lại đăng ký môn
-                    </Button>,
-                ]}
-            />
         );
     }
 
     return (
         <Space direction="vertical" size={16} style={{ width: "100%" }}>
-            <div
-                style={{
-                    background: "#fff",
-                    borderRadius: 16,
-                    padding: 20,
-                    border: "1px solid #f0f0f0",
-                }}
-            >
-                <Row justify="space-between" align="middle" gutter={[16, 16]}>
-                    <Col>
-                        <Title level={3} style={{ margin: 0 }}>
-                            Thanh toán học phí
-                        </Title>
-                        <Text type="secondary">
-                            Vui lòng kiểm tra thông tin và hoàn tất thanh toán
-                            trước hạn.
-                        </Text>
-                    </Col>
-
-                    <Col>
-                        <Button onClick={() => navigate(-1)}>Quay lại</Button>
-                    </Col>
-                </Row>
-            </div>
-
-            {!!payment.dueDate && (
-                <Alert
-                    type="warning"
-                    showIcon
-                    message={`Hạn thanh toán: ${dayjs(payment.dueDate).format(
-                        "HH:mm DD/MM/YYYY",
-                    )}`}
-                    description="Sau thời hạn này, phiếu thanh toán có thể chuyển sang trạng thái quá hạn."
-                />
-            )}
-
-            <PaymentInfoCard payment={payment} />
-
-            <PaymentSummaryCard
-                totalItems={activeItems.length}
-                totalCredits={totalCredits}
-                totalAmount={totalAmount}
+            <PaymentHeaderCard
+                onReload={fetchPayment}
+                onBack={() => navigate(-1)}
             />
 
-            <div
-                style={{
-                    background: "#fff",
-                    borderRadius: 16,
-                    padding: 20,
-                    border: "1px solid #f0f0f0",
-                }}
-            >
-                <Title level={4} style={{ marginTop: 0 }}>
-                    Danh sách môn cần thanh toán
-                </Title>
-                <PaymentItemsTable data={payment.items ?? []} />
-            </div>
+            <Alert
+                type="info"
+                showIcon
+                message="Danh sách bên dưới gồm các môn đã đăng ký nhưng chưa thanh toán."
+                description="Sau khi bấm thanh toán, hệ thống sẽ chuyển sang cổng VNPay."
+            />
 
-            <PaymentActionCard
-                paymentMethod={paymentMethod}
-                setPaymentMethod={setPaymentMethod}
-                note={note}
-                setNote={setNote}
-                onPay={onPay}
+            <PaymentSummaryCard
+                totalItems={items.length}
+                totalCredits={totalCredits}
+                totalAmount={totalAmount}
+                dueDate={dueDate}
+            />
+
+            <PaymentCourseTableCard items={items} columns={columns} />
+
+            <PaymentMethodCard
+                value={paymentMethod}
+                onChange={setPaymentMethod}
+                totalAmount={Number(totalAmount || 0)}
                 paying={paying}
-                status={payment.status}
+                onPay={onPay}
+                items={items || []}
             />
         </Space>
     );

@@ -19,6 +19,7 @@ import {
     UserOutlined,
 } from "@ant-design/icons";
 import { getMyLessonsByDateAPI } from "@/services/api";
+import { LESSON_TIME_MAP } from "@/types/constans";
 
 const { Title, Text } = Typography;
 
@@ -61,21 +62,6 @@ const dayOfWeekMap: Record<number, string> = {
     6: "Thứ 6",
     7: "Thứ 7",
     8: "Chủ nhật",
-};
-
-const LESSON_TIME_MAP: Record<number, { start: string; end: string }> = {
-    1: { start: "07:00", end: "07:50" },
-    2: { start: "07:50", end: "08:40" },
-    3: { start: "08:50", end: "09:40" },
-    4: { start: "09:40", end: "10:30" },
-    5: { start: "10:40", end: "11:30" },
-    6: { start: "13:00", end: "13:50" },
-    7: { start: "13:50", end: "14:40" },
-    8: { start: "14:50", end: "15:40" },
-    9: { start: "15:40", end: "16:30" },
-    10: { start: "19:55", end: "20:30" },
-    11: { start: "20:30", end: "21:20" },
-    // 12: { start: "18:50", end: "19:40" },
 };
 
 const getLessonStatusMeta = (status?: string) => {

@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { Alert, Button, Empty, Space, Spin, Typography, message } from "antd";
 import { useNavigate, useParams } from "react-router-dom";
-import PaymentInfoCard from "../PaymentInfoCard";
-import PaymentSummaryCard from "../PaymentSummaryCard";
-import PaymentItemsTable from "../PaymentItemsTable";
+
 import { getPaymentDetailAPI } from "@/services/api";
 
 const { Title } = Typography;
@@ -83,18 +81,6 @@ const PaymentDetailPage = () => {
                 />
             )}
 
-            <PaymentInfoCard payment={payment} />
-
-            <PaymentSummaryCard
-                totalItems={
-                    (payment.items ?? []).filter(
-                        (item) => item.status === "ACTIVE",
-                    ).length
-                }
-                totalCredits={payment.totalCredits}
-                totalAmount={payment.totalAmount}
-            />
-
             <div
                 style={{
                     background: "#fff",
@@ -106,7 +92,6 @@ const PaymentDetailPage = () => {
                 <Title level={4} style={{ marginTop: 0 }}>
                     Chi tiết các môn học
                 </Title>
-                <PaymentItemsTable data={payment.items ?? []} />
             </div>
         </Space>
     );
