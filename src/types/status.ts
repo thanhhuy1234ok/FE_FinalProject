@@ -15,4 +15,5 @@ export enum TPaymentMethod {
     BANK_TRANSFER = "BANK_TRANSFER",
     MOMO = "MOMO",
     VNPAY = "VNPAY",
+    TECHCOMBANK = "TECHCOMBANK",
 }
