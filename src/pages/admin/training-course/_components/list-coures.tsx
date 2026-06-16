@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import ButtonComponents from "@/components/share/button";
-import CourseHook from "../_hooks/course.hook";
+import {
+    BookOutlined,
+    FileExcelOutlined,
+    PlusOutlined,
+    ReloadOutlined,
+} from "@ant-design/icons";
 import {
     Button,
     Card,
@@ -14,16 +18,19 @@ import {
     type CollapseProps,
     type TableColumnsType,
 } from "antd";
-import ModalCourse from "./modal";
+
+import ButtonComponents from "@/components/share/button";
 import ImportExcelData from "@/components/share/data-import/import.data";
+import CourseHook from "../_hooks/course.hook";
+import ModalCourse from "./modal";
+import ModalCourseCTDT from "./modal-couse-ctđt";
+
 import {
-    createBulkCurriculumSubjectAPI,
     createBulkCurriculumSubjectNameAPI,
     getCurriculumSubjectAPI,
 } from "@/services/api";
-import ModalCourseCTDT from "./modal-couse-ctđt";
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 type ISemesterGroupedRow = ICurriculumSubject & {
     _semesterKey: string;
@@ -31,24 +38,17 @@ type ISemesterGroupedRow = ICurriculumSubject & {
 };
 
 const ListCourse = () => {
-    const [openModal, setOpenModal] = useState<boolean>(false);
-    const [openModalImport, setOpenModalImport] = useState(false);
+    const [openModal, setOpenModal] = useState(false);
     const [openModalImportV1, setOpenModalImportV1] = useState(false);
+    const [openCurriculumModal, setOpenCurriculumModal] = useState(false);
 
-    // giữ lại cho modal sau này
-    const [openTermModal, setOpenTermModal] = useState<boolean>(false);
-    const [selectedCurriculumId, setSelectedCurriculumId] = useState<
-        number | null
-    >(null);
-
-    const [openCurriculumModal, setOpenCurriculumModal] =
-        useState<boolean>(false);
     const [defaultYearOfAdmissionId, setDefaultYearOfAdmissionId] = useState<
         number | null
     >(null);
 
     const [loadingCurriculumSubjects, setLoadingCurriculumSubjects] =
         useState(false);
+
     const [dataCurriculumSubjects, setDataCurriculumSubjects] = useState<
         ICurriculumSubject[]
     >([]);
@@ -56,17 +56,15 @@ const ListCourse = () => {
     const {
         dataYearOfCourse = [],
         dataCurriculums = [],
-        curriculumOptions,
-        subjectOptions,
         reloadData,
         majorOptions,
     } = CourseHook();
 
     const yearOptions = useMemo(
         () =>
-            (dataYearOfCourse ?? []).map((y) => ({
-                label: `K${String(y.year).slice(-2)} - ${y.year}`,
-                value: y.id,
+            dataYearOfCourse.map((item) => ({
+                label: `K${String(item.year).slice(-2)} - ${item.year}`,
+                value: item.id,
             })),
         [dataYearOfCourse],
     );
@@ -74,12 +72,14 @@ const ListCourse = () => {
     const fetchCurriculumSubjects = async () => {
         try {
             setLoadingCurriculumSubjects(true);
+
             const res = await getCurriculumSubjectAPI(
                 "current=1&pageSize=1000",
             );
+
             setDataCurriculumSubjects(res?.data?.result ?? []);
         } catch (error) {
-            console.error("Error fetching curriculum subjects:", error);
+            console.error(error);
             message.error("Không tải được danh sách môn học trong CTĐT");
             setDataCurriculumSubjects([]);
         } finally {
@@ -96,36 +96,9 @@ const ListCourse = () => {
         await fetchCurriculumSubjects();
     };
 
-    const handleOpenTermModal = (curriculumId: number) => {
-        setSelectedCurriculumId(curriculumId);
-        setOpenTermModal(true);
-    };
-
     const handleOpenCreateCurriculumModal = (course: IYear) => {
         setDefaultYearOfAdmissionId(Number(course.id));
         setOpenCurriculumModal(true);
-    };
-
-    const handleImportCurriculumSubject = async (rows: ICurSubExcel[]) => {
-        const payload: ImportCurriculumSubjectPayload = {
-            items: rows.map((row) => ({
-                curriculumId: Number(row.curriculumId),
-                subjectId: Number(row.subjectId),
-                semesterNumber: Number(row.semesterNumber),
-                isRequired:
-                    row.isRequired === true ||
-                    row.isRequired === "true" ||
-                    row.isRequired === 1 ||
-                    row.isRequired === "1",
-                ordering:
-                    row.ordering !== null && row.ordering !== undefined
-                        ? Number(row.ordering)
-                        : 0,
-                prerequisiteRule: row.prerequisiteRule ?? null,
-            })),
-        };
-
-        return createBulkCurriculumSubjectAPI(payload);
     };
 
     const handleImportCurriculumSubjectByName = async (
@@ -140,7 +113,8 @@ const ListCourse = () => {
                     row.isRequired === true ||
                     row.isRequired === "true" ||
                     row.isRequired === 1 ||
-                    row.isRequired === "1",
+                    row.isRequired === "1" ||
+                    String(row.isRequired).toLowerCase() === "bắt buộc",
                 ordering:
                     row.ordering !== null &&
                     row.ordering !== undefined &&
@@ -159,7 +133,7 @@ const ListCourse = () => {
     const curriculumSubjectsMap = useMemo(() => {
         const map = new Map<number, ICurriculumSubject[]>();
 
-        (dataCurriculumSubjects ?? []).forEach((item) => {
+        dataCurriculumSubjects.forEach((item) => {
             const key = Number(item.curriculumId);
 
             if (!map.has(key)) {
@@ -179,6 +153,7 @@ const ListCourse = () => {
             if ((a.semesterNumber ?? 1) !== (b.semesterNumber ?? 1)) {
                 return (a.semesterNumber ?? 1) - (b.semesterNumber ?? 1);
             }
+
             return (a.ordering ?? 0) - (b.ordering ?? 0);
         });
 
@@ -214,9 +189,17 @@ const ListCourse = () => {
 
     const columns: TableColumnsType<ISemesterGroupedRow> = [
         {
+            title: "Thứ tự",
+            dataIndex: "ordering",
+            width: 90,
+            align: "center",
+            render: (value: number | undefined) => value ?? 0,
+        },
+        {
             title: "Kỳ học",
             dataIndex: "_semesterKey",
-            width: 150,
+            width: 140,
+            fixed: "left",
             onCell: (record) => ({
                 rowSpan: record._rowSpan,
             }),
@@ -225,26 +208,34 @@ const ListCourse = () => {
                 const year = Math.ceil(semesterNumber / 2);
                 const semesterInYear = semesterNumber % 2 === 0 ? 2 : 1;
 
-                return `Năm ${year} - HK${semesterInYear}`;
+                return (
+                    <Tag color="processing">
+                        Năm {year} - HK{semesterInYear}
+                    </Tag>
+                );
             },
         },
         {
-            title: "Tên môn học",
+            title: "Môn học",
             dataIndex: ["subject", "name"],
-            width: 260,
-            render: (value: string | undefined) => value ?? "—",
-        },
-        {
-            title: "Mã môn",
-            dataIndex: ["subject", "code"],
-            width: 120,
-            render: (value: string | undefined) => value ?? "—",
+            width: 280,
+            fixed: "left",
+            render: (value: string | undefined, record) => (
+                <Space direction="vertical" size={0}>
+                    <Text strong>{value ?? "—"}</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                        {record.subject?.code ?? "Chưa có mã môn"}
+                    </Text>
+                </Space>
+            ),
         },
         {
             title: "TC",
-            width: 80,
+            width: 70,
             align: "center",
-            render: (_: unknown, record) => record.subject?.credit,
+            render: (_: unknown, record) => (
+                <Tag color="blue">{record.subject?.credit ?? 0}</Tag>
+            ),
         },
         {
             title: "Loại",
@@ -252,160 +243,251 @@ const ListCourse = () => {
             align: "center",
             render: (_: unknown, record) =>
                 record.isRequired ? (
-                    <Tag color="blue">Bắt buộc</Tag>
+                    <Tag color="green">Bắt buộc</Tag>
                 ) : (
                     <Tag>Tự chọn</Tag>
                 ),
         },
-        {
-            title: "Nhóm",
-            dataIndex: "groupCode",
-            width: 120,
-            render: (value: string | null | undefined) => value ?? "—",
-        },
-        {
-            title: "Thứ tự",
-            dataIndex: "ordering",
-            width: 90,
-            align: "center",
-            render: (value: number | undefined) => value ?? 0,
-        },
+
         {
             title: "Điều kiện học",
             dataIndex: "prerequisiteRule",
-            width: 180,
-            render: (value: string | null | undefined) => value ?? "—",
+            width: 220,
+            render: (value: string | null | undefined) =>
+                value ? <Text>{value}</Text> : <Text type="secondary">—</Text>,
         },
     ];
 
     const listItemYears: CollapseProps["items"] = useMemo(() => {
-        return (dataYearOfCourse ?? []).map((yearItem) => {
-            const curriculumsOfYear = (dataCurriculums ?? []).filter(
+        return dataYearOfCourse.map((yearItem) => {
+            const curriculumsOfYear = dataCurriculums.filter(
                 (curriculum) =>
                     Number(curriculum.year_of_admission_id) ===
                     Number(yearItem.id),
             );
 
+            const totalSubjects = curriculumsOfYear.reduce(
+                (total, curriculum) =>
+                    total +
+                    (curriculumSubjectsMap.get(Number(curriculum.id))?.length ??
+                        0),
+                0,
+            );
+
             return {
                 key: String(yearItem.id),
                 label: (
-                    <Space>
+                    <Space size={12} wrap>
+                        <BookOutlined />
+
                         <Text strong>
                             Khóa K{String(yearItem.year).slice(-2)} -{" "}
                             {yearItem.year}
                         </Text>
-                        <Tag color="processing">
+
+                        <Tag color="purple">
                             {curriculumsOfYear.length} CTĐT
                         </Tag>
+
+                        <Tag color="blue">{totalSubjects} môn học</Tag>
                     </Space>
                 ),
                 children: (
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 16,
-                        }}
-                    >
-                        <Space wrap>
-                            <ButtonComponents
-                                title="Thêm CTĐT"
-                                onClick={() =>
-                                    handleOpenCreateCurriculumModal(yearItem)
-                                }
-                            />
+                    <div style={{ display: "grid", gap: 16 }}>
+                        <Card
+                            size="small"
+                            style={{
+                                borderRadius: 14,
+                                background:
+                                    "linear-gradient(135deg, #f8fbff 0%, #ffffff 100%)",
+                            }}
+                        >
+                            <Space
+                                style={{
+                                    width: "100%",
+                                    justifyContent: "space-between",
+                                }}
+                                wrap
+                            >
+                                <Space direction="vertical" size={0}>
+                                    <Text strong>
+                                        Quản lý CTĐT khóa K
+                                        {String(yearItem.year).slice(-2)}
+                                    </Text>
+                                    <Text type="secondary">
+                                        Thêm chương trình đào tạo hoặc import
+                                        môn học bằng Excel.
+                                    </Text>
+                                </Space>
 
-                            <Button onClick={() => setOpenModalImport(true)}>
-                                Import theo ID
-                            </Button>
+                                <Space wrap>
+                                    <Button
+                                        type="primary"
+                                        icon={<PlusOutlined />}
+                                        onClick={() =>
+                                            handleOpenCreateCurriculumModal(
+                                                yearItem,
+                                            )
+                                        }
+                                    >
+                                        Thêm CTĐT
+                                    </Button>
 
-                            <Button onClick={() => setOpenModalImportV1(true)}>
-                                Import theo tên
-                            </Button>
-                        </Space>
+                                    <Button
+                                        icon={<FileExcelOutlined />}
+                                        onClick={() =>
+                                            setOpenModalImportV1(true)
+                                        }
+                                    >
+                                        Import Excel
+                                    </Button>
+                                </Space>
+                            </Space>
+                        </Card>
 
                         {curriculumsOfYear.length === 0 ? (
-                            <Empty description="Chưa có chương trình đào tạo" />
+                            <Card>
+                                <Empty description="Chưa có chương trình đào tạo" />
+                            </Card>
                         ) : (
-                            curriculumsOfYear.map((curriculum) => {
-                                const curriculumSubjects =
-                                    curriculumSubjectsMap.get(
-                                        Number(curriculum.id),
-                                    ) ?? [];
+                            <Collapse
+                                bordered={false}
+                                expandIconPosition="end"
+                                style={{ background: "transparent" }}
+                                items={curriculumsOfYear.map((curriculum) => {
+                                    const curriculumSubjects =
+                                        curriculumSubjectsMap.get(
+                                            Number(curriculum.id),
+                                        ) ?? [];
 
-                                const tableData =
-                                    buildSemesterRows(curriculumSubjects);
+                                    const tableData =
+                                        buildSemesterRows(curriculumSubjects);
 
-                                return (
-                                    <Card
-                                        key={curriculum.id}
-                                        title={
-                                            <Space
-                                                direction="vertical"
-                                                size={0}
+                                    return {
+                                        key: String(curriculum.id),
+                                        label: (
+                                            <div
+                                                style={{
+                                                    width: "100%",
+                                                    display: "flex",
+                                                    justifyContent:
+                                                        "space-between",
+                                                    alignItems: "center",
+                                                    gap: 12,
+                                                    paddingRight: 12,
+                                                }}
                                             >
-                                                <Text strong>
-                                                    {curriculum.name ??
-                                                        "Chưa có tên CTĐT"}
-                                                </Text>
+                                                <Space
+                                                    direction="vertical"
+                                                    size={4}
+                                                >
+                                                    <Text strong>
+                                                        {curriculum.name ??
+                                                            "Chưa có tên CTĐT"}
+                                                    </Text>
 
-                                                <Space wrap size={6}>
-                                                    {curriculum.code && (
-                                                        <Tag>
-                                                            {curriculum.code}
-                                                        </Tag>
-                                                    )}
+                                                    <Space wrap size={6}>
+                                                        {curriculum.code && (
+                                                            <Tag color="geekblue">
+                                                                {
+                                                                    curriculum.code
+                                                                }
+                                                            </Tag>
+                                                        )}
 
-                                                    {curriculum.major?.name && (
-                                                        <Tag color="purple">
+                                                        {curriculum.major
+                                                            ?.name && (
+                                                            <Tag color="purple">
+                                                                {
+                                                                    curriculum
+                                                                        .major
+                                                                        .name
+                                                                }
+                                                            </Tag>
+                                                        )}
+
+                                                        <Tag color="cyan">
                                                             {
-                                                                curriculum.major
-                                                                    .name
-                                                            }
+                                                                curriculumSubjects.length
+                                                            }{" "}
+                                                            môn học
                                                         </Tag>
-                                                    )}
+                                                    </Space>
                                                 </Space>
-                                            </Space>
-                                        }
-                                        extra={
-                                            <Button
-                                                type="primary"
-                                                onClick={() =>
-                                                    handleOpenTermModal(
-                                                        Number(curriculum.id),
-                                                    )
-                                                }
-                                            >
-                                                Thêm môn học
-                                            </Button>
-                                        }
-                                        styles={{
-                                            body: {
-                                                paddingTop: 12,
-                                            },
-                                        }}
-                                    >
-                                        {tableData.length === 0 ? (
-                                            <Empty description="CTĐT chưa có môn học" />
-                                        ) : (
-                                            <Table<ISemesterGroupedRow>
-                                                rowKey={(record) =>
-                                                    String(record.id)
-                                                }
-                                                columns={columns}
-                                                dataSource={tableData}
-                                                pagination={false}
-                                                bordered
-                                                size="middle"
-                                                loading={
-                                                    loadingCurriculumSubjects
-                                                }
-                                                scroll={{ x: 1100 }}
-                                            />
-                                        )}
-                                    </Card>
-                                );
-                            })
+
+                                                <Text
+                                                    type="secondary"
+                                                    style={{ fontSize: 13 }}
+                                                >
+                                                    Nhấn để xem chi tiết
+                                                </Text>
+                                            </div>
+                                        ),
+                                        children: (
+                                            <div>
+                                                <Card
+                                                    size="small"
+                                                    style={{
+                                                        marginBottom: 16,
+                                                        borderRadius: 12,
+                                                        background: "#fafafa",
+                                                    }}
+                                                >
+                                                    <Space
+                                                        style={{
+                                                            width: "100%",
+                                                            justifyContent:
+                                                                "space-between",
+                                                        }}
+                                                        wrap
+                                                    >
+                                                        <Space
+                                                            direction="vertical"
+                                                            size={0}
+                                                        >
+                                                            <Text strong>
+                                                                Danh sách môn
+                                                                học
+                                                            </Text>
+                                                            <Text type="secondary">
+                                                                Môn học được
+                                                                chia theo năm
+                                                                học và học kỳ.
+                                                            </Text>
+                                                        </Space>
+
+                                                        <Tag color="blue">
+                                                            {
+                                                                curriculumSubjects.length
+                                                            }{" "}
+                                                            môn
+                                                        </Tag>
+                                                    </Space>
+                                                </Card>
+
+                                                {tableData.length === 0 ? (
+                                                    <Empty description="CTĐT chưa có môn học" />
+                                                ) : (
+                                                    <Table<ISemesterGroupedRow>
+                                                        rowKey={(record) =>
+                                                            String(record.id)
+                                                        }
+                                                        columns={columns}
+                                                        dataSource={tableData}
+                                                        pagination={false}
+                                                        bordered
+                                                        size="small"
+                                                        loading={
+                                                            loadingCurriculumSubjects
+                                                        }
+                                                        scroll={{ x: 1100 }}
+                                                    />
+                                                )}
+                                            </div>
+                                        ),
+                                    };
+                                })}
+                            />
                         )}
                     </div>
                 ),
@@ -419,33 +501,62 @@ const ListCourse = () => {
     ]);
 
     return (
-        <div>
-            <Space
+        <div style={{ padding: 24 }}>
+            <Card
                 style={{
-                    width: "100%",
-                    justifyContent: "space-between",
+                    borderRadius: 16,
                     marginBottom: 16,
                 }}
-                wrap
             >
-                <h1 style={{ margin: 0 }}>
-                    Danh sách năm học / chương trình đào tạo
-                </h1>
+                <Space
+                    style={{
+                        width: "100%",
+                        justifyContent: "space-between",
+                    }}
+                    align="start"
+                    wrap
+                >
+                    <Space direction="vertical" size={2}>
+                        <Title level={3} style={{ margin: 0 }}>
+                            Chương trình đào tạo
+                        </Title>
 
-                <ButtonComponents
-                    title="Thêm năm học"
-                    onClick={() => setOpenModal(true)}
-                />
-            </Space>
+                        <Text type="secondary">
+                            Quản lý năm học, chương trình đào tạo và danh sách
+                            môn học theo từng học kỳ.
+                        </Text>
+                    </Space>
 
-            {(dataYearOfCourse ?? []).length === 0 ? (
-                <Empty description="Chưa có năm học" />
+                    <Space wrap>
+                        <Button
+                            icon={<ReloadOutlined />}
+                            onClick={handleReloadAll}
+                            loading={loadingCurriculumSubjects}
+                        >
+                            Làm mới
+                        </Button>
+
+                        <ButtonComponents
+                            title="Thêm năm học"
+                            onClick={() => setOpenModal(true)}
+                        />
+                    </Space>
+                </Space>
+            </Card>
+
+            {dataYearOfCourse.length === 0 ? (
+                <Card>
+                    <Empty description="Chưa có năm học" />
+                </Card>
             ) : (
                 <Collapse
                     defaultActiveKey={[dataYearOfCourse[0]?.id?.toString()]}
                     expandIconPosition="end"
                     accordion
                     items={listItemYears}
+                    style={{
+                        background: "transparent",
+                    }}
                 />
             )}
 
@@ -453,31 +564,6 @@ const ListCourse = () => {
                 openModal={openModal}
                 setOpenModal={setOpenModal}
                 refreshTable={handleReloadAll}
-            />
-
-            <ImportExcelData<ICurSubExcel>
-                setOpenModalImport={setOpenModalImport}
-                openModalImport={openModalImport}
-                fetchData={handleReloadAll}
-                headers={[
-                    "Chương trình đào tạo ID",
-                    "Môn học ID",
-                    "Học kỳ",
-                    "Bắt buộc",
-                    "Thứ tự",
-                    "Điều kiện học",
-                ]}
-                dataMapping={[
-                    "curriculumId",
-                    "subjectId",
-                    "semesterNumber",
-                    "isRequired",
-                    "ordering",
-                    "prerequisiteRule",
-                ]}
-                templateFileUrl=""
-                uploadTitle="Nhập dữ liệu chương trình đào tạo"
-                apiFunction={handleImportCurriculumSubject}
             />
 
             <ImportExcelData<ICurSubExcelByName>
@@ -501,23 +587,9 @@ const ListCourse = () => {
                     "prerequisiteRule",
                 ]}
                 templateFileUrl=""
-                uploadTitle="Nhập dữ liệu chương trình đào tạo"
+                uploadTitle="Nhập môn học vào chương trình đào tạo"
                 apiFunction={handleImportCurriculumSubjectByName}
             />
-
-            {/*
-            <ModalBulkCurriculumTerms
-                open={openTermModal}
-                onClose={() => setOpenTermModal(false)}
-                curriculumOptions={curriculumOptions}
-                curriculumId={selectedCurriculumId}
-                subjectOptions={subjectOptions}
-                onSubmit={async (payload) => {
-                    await createBulkCurriculumSubjectAPI(payload);
-                }}
-                reloadTable={handleReloadAll}
-            />
-            */}
 
             <ModalCourseCTDT
                 open={openCurriculumModal}

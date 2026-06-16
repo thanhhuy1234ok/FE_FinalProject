@@ -1,5 +1,5 @@
 {
-    "name": "vite-project",
+    "name": "school-ag",
     "private": true,
     "version": "0.0.0",
     "type": "module",
@@ -11,6 +11,7 @@
     },
     "dependencies": {
         "@ant-design/icons": "^6.1.0",
+        "@ant-design/plots": "^2.6.8",
         "@ant-design/pro-components": "^2.8.10",
         "@fontsource/noto-color-emoji": "^5.2.12",
         "@fullcalendar/react": "^6.1.20",

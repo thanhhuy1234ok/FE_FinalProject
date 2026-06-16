@@ -837,6 +837,30 @@ const ChatRoomSection = ({
                                             setChatInput(e.target.value)
                                         }
                                         onPressEnter={handleSendMessage}
+                                        onPaste={(e) => {
+                                            const items =
+                                                e.clipboardData?.items;
+
+                                            if (!items) return;
+
+                                            for (const item of items) {
+                                                if (
+                                                    item.type.startsWith(
+                                                        "image/",
+                                                    )
+                                                ) {
+                                                    const file =
+                                                        item.getAsFile();
+
+                                                    if (file) {
+                                                        handleSelectFile(file);
+                                                        message.success(
+                                                            "Đã dán ảnh chụp màn hình",
+                                                        );
+                                                    }
+                                                }
+                                            }
+                                        }}
                                     />
 
                                     <Button

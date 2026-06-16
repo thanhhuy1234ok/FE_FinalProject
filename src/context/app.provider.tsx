@@ -16,26 +16,35 @@ export const AppProvider = (props: TProps) => {
     useEffect(() => {
         const fetchAccount = async () => {
             try {
+                const token = localStorage.getItem("access_token");
+
+                if (!token) {
+                    setUser(null);
+                    setIsAuthenticated(false);
+                    socket.disconnect();
+                    return;
+                }
+
                 const res = await getAccountAPI();
 
                 if (res?.data?.user) {
                     setUser(res.data.user);
                     setIsAuthenticated(true);
 
-                    const token = localStorage.getItem("access_token");
-
-                    if (token) {
-                        connectSocket(token);
-                    }
+                    connectSocket(token);
                 } else {
                     setUser(null);
                     setIsAuthenticated(false);
                     socket.disconnect();
+                    localStorage.removeItem("access_token");
                 }
-            } catch {
+            } catch (error) {
+                console.log("FETCH ACCOUNT ERROR:", error);
+
                 setUser(null);
                 setIsAuthenticated(false);
                 socket.disconnect();
+                localStorage.removeItem("access_token");
             } finally {
                 setIsAppLoading(false);
             }
@@ -48,33 +57,43 @@ export const AppProvider = (props: TProps) => {
         };
     }, []);
 
+    useEffect(() => {
+        if (!isAuthenticated) return;
+
+        const token = localStorage.getItem("access_token");
+
+        if (!token) return;
+
+        connectSocket(token);
+    }, [isAuthenticated]);
+
+    if (isAppLoading) {
+        return (
+            <div
+                style={{
+                    position: "fixed",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                }}
+            >
+                <PacmanLoader size={30} color="#36d6b4" />
+            </div>
+        );
+    }
+
     return (
-        <>
-            {isAppLoading === false ? (
-                <CurrentAppContext.Provider
-                    value={{
-                        isAuthenticated,
-                        user,
-                        setIsAuthenticated,
-                        setUser,
-                        isAppLoading,
-                        setIsAppLoading,
-                    }}
-                >
-                    {props.children}
-                </CurrentAppContext.Provider>
-            ) : (
-                <div
-                    style={{
-                        position: "fixed",
-                        top: "50%",
-                        left: "50%",
-                        transform: "translate(-50%, -50%)",
-                    }}
-                >
-                    <PacmanLoader size={30} color="#36d6b4" />
-                </div>
-            )}
-        </>
+        <CurrentAppContext.Provider
+            value={{
+                isAuthenticated,
+                user,
+                setIsAuthenticated,
+                setUser,
+                isAppLoading,
+                setIsAppLoading,
+            }}
+        >
+            {props.children}
+        </CurrentAppContext.Provider>
     );
 };

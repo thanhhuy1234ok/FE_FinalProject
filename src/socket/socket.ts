@@ -27,16 +27,18 @@ socket.on("disconnect", (reason) => {
     console.log("🔌 Socket disconnected:", reason);
 });
 
-export const connectSocket = (accessToken: string) => {
-    if (socket.connected) return;
+export const connectSocket = (token: string) => {
+    socket.auth = { token };
 
-    socket.auth = {
-        token: accessToken,
-    };
+    if (!socket.connected) {
+        socket.connect();
+    }
 
-    socket.connect();
+    return socket;
 };
 
 export const disconnectSocket = () => {
-    socket.disconnect();
+    if (socket.connected) {
+        socket.disconnect();
+    }
 };

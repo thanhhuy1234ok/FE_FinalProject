@@ -464,8 +464,14 @@ export const returnURLVerifyPaymentAPI = (query: string) => {
     return axios.get(`/api/v1/payments/vnpay-return?${query}`);
 };
 
-export const getMyTimeTableAPI = async () => {
-    return axios.get<IBackendRes<any>>("/api/v1/schedules/my-timetable");
+export const getMyTimeTableAPI = async (params?: {
+    date?: string;
+    from?: string;
+    to?: string;
+}) => {
+    return axios.get<IBackendRes<any>>("/api/v1/schedules/my-timetable", {
+        params,
+    });
 };
 
 export const getTeacherLessonsByDateAPI = (date: string) => {
@@ -671,4 +677,46 @@ export const getMyFindStudyResultsAPI = (query = "") => {
         : `/api/v1/grades/my-study-results`;
 
     return axios.get(url);
+};
+
+export const getUserStatisticsAPI = () => {
+    return axios.get("/api/v1/users/statistics");
+};
+
+export const getPaymentStatisticsAPI = () => {
+    return axios.get("/api/v1/payments/statistics");
+};
+export const getPaymentStatisticsByTermAPI = () => {
+    return axios.get("/api/v1/payments/statistics-by-term");
+};
+
+export const getPaymentDashboardOverviewAPI = () => {
+    return axios.get("/api/v1/payments/dashboard-overview");
+};
+
+export const getPaymentStatisticsByYearAPI = () => {
+    return axios.get("/api/v1/payments/statistics-by-year");
+};
+
+export const getTeacherTeachingOverviewAPI = (userId: string) => {
+    return axios.get(`/api/v1/users/${userId}/teacher-teaching-overview`);
+};
+
+export const getStudentLearningOverviewAPI = (userId: string) => {
+    return axios.get(`/api/v1/users/${userId}/student-learning-overview`);
+};
+
+export const checkRoomAvailableAPI = (query: string) => {
+    return axios.get(`/api/v1/schedules/check-room-available?${query}`);
+};
+
+export const getAdminPaymentsAPI = (query = "") => {
+    return axios.get(`/api/v1/payments/admin${query ? `?${query}` : ""}`);
+};
+
+export const bulkUpdatePaymentStatusAPI = (ids: number[], status: string) => {
+    return axios.patch("/api/v1/payments/bulk-status", {
+        ids,
+        status,
+    });
 };

@@ -28,11 +28,11 @@ jobs:
               run: |
                   curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
                   -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-                  -d text="✅ FE Deploy Success"
+                  -d text="✅ Deploy FE thành công: ${{ github.repository }} - ${{ github.ref_name }}"
 
             - name: Telegram Failed
               if: failure()
               run: |
                   curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
                   -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-                  -d text="❌ FE Deploy Failed"
+                  -d text="❌ Deploy FE thất bại: ${{ github.repository }} - ${{ github.ref_name }}"

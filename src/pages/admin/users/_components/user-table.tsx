@@ -119,19 +119,16 @@ const UserTable = () => {
             },
             {
                 title: "Role",
-                dataIndex: "role",
-                key: "role",
+                dataIndex: ["role", "name"],
+                key: "role.name",
                 width: 140,
                 align: "center",
-                onFilter: (value, record) =>
-                    record.role?.name !== "ADMIN" &&
-                    record.role?.name === value,
                 filters:
                     roles
                         ?.filter((r) => r.name !== "ADMIN")
                         .map((r) => ({
-                            text: ROLE_MAP[r.name]?.label ?? r.name, // hiển thị tiếng Việt
-                            value: r.name, // giữ value tiếng Anh để filter
+                            text: ROLE_MAP[r.name]?.label ?? r.name,
+                            value: r.name,
                         })) ?? [],
                 filterMultiple: false,
                 filterSearch: true,

@@ -41,6 +41,10 @@ export type AvailableItem = {
     isRegistered: boolean;
     isSameSubjectRegistered?: boolean;
     canRegister?: boolean;
+
+    isRequired?: boolean;
+    curriculumSubjectType?: "REQUIRED" | "ELECTIVE";
+
     schedules: ScheduleItem[];
     subject: {
         id: number;
@@ -107,6 +111,19 @@ const getDayLabel = (dayOfWeek?: number) => {
     }
 };
 
+const renderSubjectType = (record: AvailableItem) => {
+    console.log(record.isRequired);
+    const isRequired =
+        record.isRequired === true ||
+        record.curriculumSubjectType === "REQUIRED";
+
+    return (
+        <Tag color={isRequired ? "red" : "blue"}>
+            {isRequired ? "Bắt buộc" : "Tự chọn"}
+        </Tag>
+    );
+};
+
 const renderDayOfWeek = (schedules?: ScheduleItem[]): ReactNode => {
     if (!schedules?.length) return "—";
 
@@ -161,6 +178,13 @@ const buildAvailableColumns = (
         key: "subjectName",
         width: 220,
         render: (_, record) => record?.subject?.name || "—",
+    },
+    {
+        title: "Loại môn",
+        key: "subjectType",
+        width: 120,
+        align: "center",
+        render: (_, record) => renderSubjectType(record),
     },
     {
         title: "Thứ",
@@ -266,6 +290,13 @@ const buildSelectedColumns = (
         render: (_, record) => record?.subject?.name || "—",
     },
     {
+        title: "Loại môn",
+        key: "subjectType",
+        width: 120,
+        align: "center",
+        render: (_, record) => renderSubjectType(record),
+    },
+    {
         title: "Thứ",
         key: "dayOfWeek",
         width: 150,
@@ -304,6 +335,7 @@ const buildSelectedColumns = (
         title: "Bỏ chọn",
         key: "remove",
         width: 120,
+        fixed: "right",
         render: (_, record) => (
             <Button
                 danger
@@ -369,7 +401,7 @@ const RegistrationTab = ({
                         bordered
                         loading={loading}
                         size="middle"
-                        scroll={{ x: 1500 }}
+                        scroll={{ x: 1620 }}
                         pagination={{ pageSize: 10 }}
                         dataSource={availableData}
                         columns={buildAvailableColumns(
@@ -383,7 +415,7 @@ const RegistrationTab = ({
                                 if (!selected) {
                                     onSelectChange(
                                         selectedRowKeys.filter(
-                                            (key) => key !== record.id,
+                                            (key) => Number(key) !== record.id,
                                         ),
                                     );
                                     return;
@@ -485,7 +517,7 @@ const RegistrationTab = ({
                         rowKey="id"
                         bordered
                         size="middle"
-                        scroll={{ x: 1350 }}
+                        scroll={{ x: 1470 }}
                         pagination={false}
                         dataSource={selectedCourses}
                         columns={buildSelectedColumns(onRemoveSelected)}

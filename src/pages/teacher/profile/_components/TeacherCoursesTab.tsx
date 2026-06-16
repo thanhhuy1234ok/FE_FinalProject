@@ -14,7 +14,7 @@ const TeacherCoursesTab = ({ courses = [] }: any) => {
         {
             title: "Lớp",
             render: (_: any, record: any) =>
-                record.adminClass?.name || "Không có lớp",
+                record.adminClass?.name || "Lớp chung",
         },
         {
             title: "Học kỳ",

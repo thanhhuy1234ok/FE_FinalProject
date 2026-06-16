@@ -46,30 +46,28 @@ type TeacherSchedule = {
     studentCount?: number;
 };
 
-const lessonTimeMap: Record<number, string> = {
-    1: "07:00",
-    2: "08:00",
-    3: "09:00",
-    4: "10:00",
-    5: "13:00",
-    6: "14:00",
-    7: "15:00",
-    8: "16:00",
-    9: "17:00",
+const LESSON_TIME_MAP: Record<number, { start: string; end: string }> = {
+    1: { start: "07:00", end: "07:50" },
+    2: { start: "07:50", end: "08:40" },
+    3: { start: "08:50", end: "09:40" },
+    4: { start: "09:40", end: "10:30" },
+    5: { start: "10:40", end: "11:30" },
+    6: { start: "13:00", end: "13:50" },
+    7: { start: "13:50", end: "14:40" },
+    8: { start: "14:50", end: "15:40" },
+    9: { start: "15:40", end: "16:30" },
+    10: { start: "19:55", end: "20:30" },
+    11: { start: "20:30", end: "21:20" },
 };
 
-const lessonRows = [
-    { lesson: 1, label: "Tiết 1", time: "07:00" },
-    { lesson: 2, label: "Tiết 2", time: "08:00" },
-    { lesson: 3, label: "Tiết 3", time: "09:00" },
-    { lesson: 4, label: "Tiết 4", time: "10:00" },
-    { lesson: 5, label: "Tiết 5", time: "13:00" },
-    { lesson: 6, label: "Tiết 6", time: "14:00" },
-    { lesson: 7, label: "Tiết 7", time: "15:00" },
-    { lesson: 8, label: "Tiết 8", time: "16:00" },
-];
+const LESSON_ROWS = Object.entries(LESSON_TIME_MAP).map(([lesson, time]) => ({
+    lesson: Number(lesson),
+    label: `Tiết ${lesson}`,
+    time: `${time.start} - ${time.end}`,
+}));
 
-const daysLabel = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+const WEEK_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+const COURSE_COLOR = "linear-gradient(135deg, #1677ff 0%, #4096ff 100%)";
 
 const getVietnameseDay = (date: Dayjs) => {
     const d = date.day();
@@ -111,14 +109,23 @@ const getMonthCells = (date: Dayjs) => {
 };
 
 const getTimeText = (item: TeacherSchedule) => {
-    const start = item.startTime || lessonTimeMap[item.lessonStart] || "--:--";
-    const end =
-        item.endTime ||
-        lessonTimeMap[item.lessonEnd + 1] ||
-        lessonTimeMap[item.lessonEnd] ||
-        "--:--";
+    const start =
+        item.startTime || LESSON_TIME_MAP[item.lessonStart]?.start || "--:--";
+
+    const end = item.endTime || LESSON_TIME_MAP[item.lessonEnd]?.end || "--:--";
 
     return `${start} - ${end}`;
+};
+
+const getResponseArray = (res: any): TeacherSchedule[] => {
+    const data =
+        res?.data?.data?.result ||
+        res?.data?.data ||
+        res?.data?.result ||
+        res?.data ||
+        [];
+
+    return Array.isArray(data) ? data : [];
 };
 
 const TablePage = () => {
@@ -154,15 +161,9 @@ const TablePage = () => {
             }
 
             const res = await getTeacherTimeTableAPI(params);
+            const data = getResponseArray(res);
 
-            const data =
-                res.data?.data?.result ||
-                res.data?.data ||
-                res.data?.result ||
-                res.data ||
-                [];
-
-            setSchedules(Array.isArray(data) ? data : []);
+            setSchedules(data);
         } catch (error) {
             console.log(error);
             setSchedules([]);
@@ -177,7 +178,7 @@ const TablePage = () => {
 
     const getSchedulesByDate = (date: Dayjs) => {
         const current = date.startOf("day");
-        const dayOfWeek = getVietnameseDay(current);
+        const currentDayOfWeek = getVietnameseDay(current);
 
         return schedules
             .filter((item) => {
@@ -185,7 +186,7 @@ const TablePage = () => {
                     return dayjs(item.date).isSame(current, "day");
                 }
 
-                if (item.dayOfWeek !== dayOfWeek) {
+                if (Number(item.dayOfWeek) !== currentDayOfWeek) {
                     return false;
                 }
 
@@ -201,7 +202,7 @@ const TablePage = () => {
 
                 return startOk && endOk;
             })
-            .sort((a, b) => a.lessonStart - b.lessonStart);
+            .sort((a, b) => Number(a.lessonStart) - Number(b.lessonStart));
     };
 
     const daySchedules = useMemo(
@@ -223,79 +224,185 @@ const TablePage = () => {
     };
 
     const renderHeaderTitle = () => {
-        if (mode === "day") return currentDate.format("dddd, DD/MM/YYYY");
+        if (mode === "day") return currentDate.format("DD/MM/YYYY");
 
         if (mode === "week") {
-            return `Tuần ${weekDays[0].format("DD/MM")} - ${weekDays[6].format(
+            return `${weekDays[0].format("DD/MM/YYYY")} - ${weekDays[6].format(
                 "DD/MM/YYYY",
             )}`;
         }
 
-        return `Tháng ${currentDate.format("MM/YYYY")}`;
+        return currentDate.format("MM/YYYY");
     };
 
-    const renderScheduleCard = (item: TeacherSchedule) => {
-        return (
-            <Card
-                key={item.id}
-                size="small"
-                hoverable
+    const renderScheduleBlock = (item: TeacherSchedule) => (
+        <div
+            key={item.id}
+            style={{
+                height: "100%",
+                padding: 12,
+                borderRadius: 16,
+                background: COURSE_COLOR,
+                color: "#fff",
+                boxShadow: "0 10px 24px rgba(22,119,255,0.25)",
+                border: "1px solid rgba(255,255,255,0.35)",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                overflow: "hidden",
+            }}
+        >
+            <div>
+                <div
+                    style={{
+                        fontWeight: 900,
+                        fontSize: 13,
+                        marginBottom: 6,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                    }}
+                    title={item.courseCode}
+                >
+                    {item.courseCode}
+                </div>
+
+                <div
+                    style={{
+                        fontSize: 14,
+                        fontWeight: 800,
+                        lineHeight: 1.35,
+                        marginBottom: 8,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                    }}
+                    title={item.subjectName}
+                >
+                    {item.subjectName}
+                </div>
+
+                <div style={{ fontSize: 12, opacity: 0.95 }}>
+                    <EnvironmentOutlined /> {item.roomName || "Chưa có phòng"}
+                </div>
+
+                <div style={{ fontSize: 12, opacity: 0.95 }}>
+                    <TeamOutlined /> {item.className || "Lớp học"}
+                </div>
+
+                <div style={{ fontSize: 12, opacity: 0.95 }}>
+                    {item.studentCount || 0} sinh viên
+                </div>
+            </div>
+
+            <div
                 style={{
-                    borderRadius: 18,
-                    marginBottom: 14,
-                    border: "1px solid #dbeafe",
-                    boxShadow: "0 10px 24px rgba(15, 23, 42, 0.08)",
+                    marginTop: 8,
+                    paddingTop: 8,
+                    borderTop: "1px solid rgba(255,255,255,0.28)",
+                    fontSize: 12,
+                    fontWeight: 700,
                 }}
-                bodyStyle={{ padding: 16 }}
             >
-                <Space direction="vertical" size={8} style={{ width: "100%" }}>
-                    <Space wrap>
-                        <Tag color="blue">{item.courseCode}</Tag>
-                        <Tag color="green">{item.className || "Lớp học"}</Tag>
-                    </Space>
+                <ClockCircleOutlined /> {getTimeText(item)}
+            </div>
+        </div>
+    );
 
-                    <Text strong style={{ fontSize: 18 }}>
-                        {item.subjectName}
-                    </Text>
+    const renderDayView = () => (
+        <Card
+            loading={loading}
+            style={{ borderRadius: 22 }}
+            title={`Lịch dạy ngày ${currentDate.format("DD/MM/YYYY")}`}
+        >
+            {daySchedules.length === 0 ? (
+                <Empty description="Không có lịch dạy trong ngày này" />
+            ) : (
+                <Space direction="vertical" size={14} style={{ width: "100%" }}>
+                    {daySchedules.map((item) => (
+                        <Card
+                            key={item.id}
+                            style={{
+                                borderRadius: 18,
+                                border: "1px solid #e5e7eb",
+                                boxShadow: "0 8px 22px rgba(15,23,42,0.06)",
+                            }}
+                        >
+                            <Row align="middle" gutter={[16, 16]}>
+                                <Col xs={24} md={5}>
+                                    <div
+                                        style={{
+                                            height: 74,
+                                            borderRadius: 16,
+                                            background: "#eff6ff",
+                                            color: "#1677ff",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            gap: 8,
+                                            fontWeight: 900,
+                                        }}
+                                    >
+                                        <ClockCircleOutlined />
+                                        {getTimeText(item)}
+                                    </div>
+                                </Col>
 
-                    <Text type="secondary" style={{ fontSize: 14 }}>
-                        <ClockCircleOutlined /> {getTimeText(item)}
-                    </Text>
+                                <Col xs={24} md={19}>
+                                    <Space wrap>
+                                        <Tag color="blue">
+                                            {item.courseCode}
+                                        </Tag>
+                                        <Tag color="green">
+                                            {item.className || "Lớp học"}
+                                        </Tag>
+                                    </Space>
 
-                    <Text type="secondary" style={{ fontSize: 14 }}>
-                        <EnvironmentOutlined />
-                        {item.roomName || "Chưa có phòng"}
-                    </Text>
+                                    <div
+                                        style={{
+                                            fontWeight: 800,
+                                            marginTop: 8,
+                                            fontSize: 16,
+                                        }}
+                                    >
+                                        {item.subjectName}
+                                    </div>
 
-                    <Text type="secondary" style={{ fontSize: 14 }}>
-                        <TeamOutlined /> {item.studentCount || 0} sinh viên
-                    </Text>
+                                    <div
+                                        style={{
+                                            color: "#64748b",
+                                            marginTop: 4,
+                                        }}
+                                    >
+                                        <EnvironmentOutlined /> Phòng:{" "}
+                                        {item.roomName || "Chưa có phòng"}
+                                    </div>
+
+                                    <div style={{ color: "#64748b" }}>
+                                        <TeamOutlined />{" "}
+                                        {item.studentCount || 0} sinh viên
+                                    </div>
+                                </Col>
+                            </Row>
+                        </Card>
+                    ))}
                 </Space>
-            </Card>
-        );
-    };
-
-    const renderDayView = () => {
-        return (
-            <Card
-                loading={loading}
-                style={{ borderRadius: 22 }}
-                title={`Lịch dạy ngày ${currentDate.format("DD/MM/YYYY")}`}
-            >
-                {daySchedules.length === 0 ? (
-                    <Empty description="Không có lịch dạy trong ngày này" />
-                ) : (
-                    daySchedules.map(renderScheduleCard)
-                )}
-            </Card>
-        );
-    };
+            )}
+        </Card>
+    );
 
     const renderWeekView = () => {
+        const ROW_HEIGHT = 86;
+
         return (
             <Card
                 loading={loading}
-                style={{ borderRadius: 22, overflow: "hidden" }}
+                style={{
+                    borderRadius: 22,
+                    overflow: "hidden",
+                    boxShadow: "0 14px 38px rgba(15, 23, 42, 0.08)",
+                }}
                 bodyStyle={{ padding: 0 }}
             >
                 <div style={{ width: "100%", overflowX: "auto" }}>
@@ -303,265 +410,196 @@ const TablePage = () => {
                         style={{
                             display: "grid",
                             gridTemplateColumns:
-                                "80px repeat(7, minmax(130px, 1fr))",
-                            minWidth: 980,
-                            borderBottom: "1px solid #e5e7eb",
-                            background: "#f8fafc",
+                                "96px repeat(7, minmax(190px, 1fr))",
+                            minWidth: 1420,
+                            background: "#fff",
                         }}
                     >
                         <div
                             style={{
-                                padding: 12,
-                                fontWeight: 800,
-                                fontSize: 14,
-                                color: "#334155",
+                                padding: 16,
+                                background: "#f8fafc",
+                                fontWeight: 900,
+                                borderRight: "1px solid #e5e7eb",
+                                borderBottom: "1px solid #e5e7eb",
+                                textAlign: "center",
                             }}
                         >
                             Tiết
                         </div>
 
-                        {weekDays.map((date) => {
+                        {weekDays.map((date, index) => {
                             const isToday = date.isSame(dayjs(), "day");
 
                             return (
                                 <div
-                                    key={date.toString()}
+                                    key={date.format("YYYY-MM-DD")}
                                     style={{
-                                        padding: "12px 8px",
+                                        padding: "14px 8px",
                                         textAlign: "center",
-                                        borderLeft: "1px solid #e5e7eb",
                                         background: isToday
-                                            ? "linear-gradient(135deg,#e6f4ff,#bae0ff)"
+                                            ? "#dbeafe"
                                             : "#f8fafc",
+                                        borderRight: "1px solid #e5e7eb",
+                                        borderBottom: "1px solid #e5e7eb",
                                     }}
                                 >
                                     <div
                                         style={{
-                                            fontWeight: 800,
-                                            fontSize: 14,
-                                            textTransform: "capitalize",
+                                            fontSize: 16,
+                                            fontWeight: 900,
                                             color: isToday
-                                                ? "#0958d9"
-                                                : "#0f172a",
+                                                ? "#1677ff"
+                                                : "#111827",
                                         }}
                                     >
-                                        {date.format("ddd")}
+                                        {WEEK_LABELS[index]}
                                     </div>
 
                                     <Text
                                         type="secondary"
-                                        style={{
-                                            fontSize: 12,
-                                            fontWeight: 600,
-                                        }}
+                                        style={{ fontSize: 12 }}
                                     >
                                         {date.format("DD/MM")}
                                     </Text>
                                 </div>
                             );
                         })}
-                    </div>
 
-                    {lessonRows.map((row) => (
-                        <div
-                            key={row.lesson}
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns:
-                                    "80px repeat(7, minmax(130px, 1fr))",
-                                minWidth: 980,
-                                minHeight: 105,
-                                borderBottom: "1px solid #e5e7eb",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    padding: 12,
-                                    background: "#f8fafc",
-                                    borderRight: "1px solid #e5e7eb",
-                                }}
-                            >
-                                <Text
-                                    strong
-                                    style={{ fontSize: 13, color: "#334155" }}
+                        <div>
+                            {LESSON_ROWS.map((row) => (
+                                <div
+                                    key={row.lesson}
+                                    style={{
+                                        height: ROW_HEIGHT,
+                                        padding: "10px 8px",
+                                        background: "#f8fafc",
+                                        borderRight: "1px solid #e5e7eb",
+                                        borderBottom: "1px solid #e5e7eb",
+                                        textAlign: "center",
+                                    }}
                                 >
-                                    {row.label}
-                                </Text>
-                                <br />
-                                <Text type="secondary" style={{ fontSize: 12 }}>
-                                    {row.time}
-                                </Text>
-                            </div>
-
-                            {weekDays.map((date) => {
-                                const items = getSchedulesByDate(date).filter(
-                                    (item) => row.lesson === item.lessonStart,
-                                );
-
-                                return (
                                     <div
-                                        key={date.toString()}
                                         style={{
-                                            padding: 8,
-                                            borderLeft: "1px solid #e5e7eb",
-                                            background: date.isSame(
-                                                dayjs(),
-                                                "day",
-                                            )
-                                                ? "#f0f9ff"
-                                                : "#ffffff",
+                                            fontWeight: 900,
+                                            color: "#111827",
+                                            marginBottom: 4,
                                         }}
                                     >
-                                        {items.map((item) => (
+                                        {row.label}
+                                    </div>
+
+                                    <Text
+                                        type="secondary"
+                                        style={{ fontSize: 11 }}
+                                    >
+                                        {row.time}
+                                    </Text>
+                                </div>
+                            ))}
+                        </div>
+
+                        {weekDays.map((date) => {
+                            const dayItems = getSchedulesByDate(date);
+                            const isToday = date.isSame(dayjs(), "day");
+
+                            return (
+                                <div
+                                    key={date.format("YYYY-MM-DD")}
+                                    style={{
+                                        position: "relative",
+                                        height: ROW_HEIGHT * LESSON_ROWS.length,
+                                        background: isToday
+                                            ? "#eff6ff"
+                                            : "#fff",
+                                        borderRight: "1px solid #e5e7eb",
+                                    }}
+                                >
+                                    {LESSON_ROWS.map((row) => (
+                                        <div
+                                            key={row.lesson}
+                                            style={{
+                                                position: "absolute",
+                                                left: 0,
+                                                right: 0,
+                                                top:
+                                                    (row.lesson - 1) *
+                                                    ROW_HEIGHT,
+                                                height: ROW_HEIGHT,
+                                                borderBottom:
+                                                    "1px solid #e5e7eb",
+                                            }}
+                                        />
+                                    ))}
+
+                                    {dayItems.map((item) => {
+                                        const top =
+                                            (Number(item.lessonStart) - 1) *
+                                            ROW_HEIGHT;
+
+                                        const span =
+                                            Number(item.lessonEnd) -
+                                            Number(item.lessonStart) +
+                                            1;
+
+                                        const height = span * ROW_HEIGHT - 12;
+
+                                        return (
                                             <div
                                                 key={item.id}
                                                 style={{
-                                                    padding: 10,
-                                                    borderRadius: 14,
-                                                    background:
-                                                        "linear-gradient(135deg, #1677ff, #4096ff)",
-                                                    color: "#fff",
-                                                    marginBottom: 8,
-                                                    minHeight: Math.max(
-                                                        76,
-                                                        (item.lessonEnd -
-                                                            item.lessonStart +
-                                                            1) *
-                                                            66,
-                                                    ),
-                                                    boxShadow:
-                                                        "0 8px 18px rgba(22,119,255,0.28)",
-                                                    border: "1px solid rgba(255,255,255,0.24)",
-                                                    transition:
-                                                        "all 0.25s ease",
-                                                    cursor: "pointer",
-                                                    display: "flex",
-                                                    flexDirection: "column",
-                                                    justifyContent:
-                                                        "space-between",
+                                                    position: "absolute",
+                                                    left: 10,
+                                                    right: 10,
+                                                    top: top + 6,
+                                                    height,
+                                                    zIndex: 2,
                                                 }}
                                             >
-                                                <div>
-                                                    <div
-                                                        style={{
-                                                            fontWeight: 900,
-                                                            fontSize: 14,
-                                                            marginBottom: 4,
-                                                            whiteSpace:
-                                                                "nowrap",
-                                                            overflow: "hidden",
-                                                            textOverflow:
-                                                                "ellipsis",
-                                                        }}
-                                                    >
-                                                        {item.courseCode}
-                                                    </div>
-
-                                                    <div
-                                                        style={{
-                                                            fontSize: 13,
-                                                            fontWeight: 700,
-                                                            lineHeight: 1.3,
-                                                            marginBottom: 6,
-                                                            display:
-                                                                "-webkit-box",
-                                                            WebkitLineClamp: 2,
-                                                            WebkitBoxOrient:
-                                                                "vertical",
-                                                            overflow: "hidden",
-                                                        }}
-                                                    >
-                                                        {item.subjectName}
-                                                    </div>
-
-                                                    <div
-                                                        style={{
-                                                            fontSize: 12,
-                                                            opacity: 0.96,
-                                                            whiteSpace:
-                                                                "nowrap",
-                                                            overflow: "hidden",
-                                                            textOverflow:
-                                                                "ellipsis",
-                                                        }}
-                                                    >
-                                                        <EnvironmentOutlined />{" "}
-                                                        {item.roomName ||
-                                                            "Chưa có phòng"}
-                                                    </div>
-
-                                                    <div
-                                                        style={{
-                                                            fontSize: 12,
-                                                            opacity: 0.96,
-                                                            whiteSpace:
-                                                                "nowrap",
-                                                            overflow: "hidden",
-                                                            textOverflow:
-                                                                "ellipsis",
-                                                        }}
-                                                    >
-                                                        <TeamOutlined />{" "}
-                                                        {item.className ||
-                                                            "Lớp học"}
-                                                    </div>
-                                                </div>
-
-                                                <div
-                                                    style={{
-                                                        marginTop: 8,
-                                                        paddingTop: 7,
-                                                        borderTop:
-                                                            "1px solid rgba(255,255,255,0.25)",
-                                                        fontSize: 12,
-                                                        fontWeight: 600,
-                                                        opacity: 0.96,
-                                                    }}
-                                                >
-                                                    <ClockCircleOutlined />{" "}
-                                                    {getTimeText(item)}
-                                                </div>
+                                                {renderScheduleBlock(item)}
                                             </div>
-                                        ))}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ))}
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             </Card>
         );
     };
+
     const renderMonthView = () => {
         const cells = getMonthCells(currentDate);
 
         return (
             <Card
                 loading={loading}
-                style={{ borderRadius: 22 }}
-                bodyStyle={{ padding: 12 }}
+                style={{
+                    borderRadius: 22,
+                    overflow: "hidden",
+                    boxShadow: "0 14px 38px rgba(15, 23, 42, 0.08)",
+                }}
+                bodyStyle={{ padding: 0 }}
             >
                 <div style={{ width: "100%", overflowX: "auto" }}>
                     <div
                         style={{
                             display: "grid",
                             gridTemplateColumns:
-                                "repeat(7, minmax(118px, 1fr))",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: 16,
-                            overflow: "hidden",
-                            minWidth: 826,
+                                "repeat(7, minmax(150px, 1fr))",
+                            minWidth: 1050,
                         }}
                     >
-                        {daysLabel.map((day) => (
+                        {WEEK_LABELS.map((day) => (
                             <div
                                 key={day}
                                 style={{
-                                    padding: "12px 8px",
+                                    padding: "14px 8px",
                                     textAlign: "center",
                                     fontWeight: 900,
-                                    fontSize: 13,
                                     background: "#f8fafc",
+                                    borderRight: "1px solid #e5e7eb",
                                     borderBottom: "1px solid #e5e7eb",
                                 }}
                             >
@@ -579,17 +617,17 @@ const TablePage = () => {
 
                             return (
                                 <div
-                                    key={date.toString()}
+                                    key={date.format("YYYY-MM-DD")}
                                     onClick={() => {
                                         setCurrentDate(date);
                                         setMode("day");
                                     }}
                                     style={{
-                                        minHeight: 128,
-                                        padding: 8,
+                                        minHeight: 138,
+                                        padding: 10,
                                         cursor: "pointer",
                                         background: isToday
-                                            ? "#e6f4ff"
+                                            ? "#eff6ff"
                                             : isCurrentMonth
                                               ? "#fff"
                                               : "#f8fafc",
@@ -602,30 +640,17 @@ const TablePage = () => {
                                         style={{
                                             display: "flex",
                                             justifyContent: "space-between",
-                                            alignItems: "center",
                                             marginBottom: 8,
                                         }}
                                     >
-                                        <Text
-                                            strong={isToday}
-                                            style={{
-                                                fontSize: 13,
-                                                color: isToday
-                                                    ? "#0958d9"
-                                                    : "#0f172a",
-                                            }}
-                                        >
+                                        <Text strong={isToday}>
                                             {date.format("DD")}
                                         </Text>
 
                                         {items.length > 0 && (
                                             <Tag
                                                 color="blue"
-                                                style={{
-                                                    margin: 0,
-                                                    fontSize: 11,
-                                                    lineHeight: "18px",
-                                                }}
+                                                style={{ margin: 0 }}
                                             >
                                                 {items.length}
                                             </Tag>
@@ -634,18 +659,17 @@ const TablePage = () => {
 
                                     <Space
                                         direction="vertical"
-                                        size={5}
+                                        size={6}
                                         style={{ width: "100%" }}
                                     >
                                         {items.slice(0, 2).map((item) => (
                                             <div
                                                 key={item.id}
                                                 style={{
-                                                    padding: "6px 7px",
-                                                    borderRadius: 9,
+                                                    padding: "7px 8px",
+                                                    borderRadius: 10,
                                                     background: "#eff6ff",
                                                     border: "1px solid #bfdbfe",
-                                                    lineHeight: 1.3,
                                                 }}
                                             >
                                                 <Text
@@ -700,15 +724,21 @@ const TablePage = () => {
     };
 
     return (
-        <div style={{ padding: "16px", maxWidth: "100%", overflowX: "hidden" }}>
+        <div
+            style={{
+                padding: 24,
+                minHeight: "100vh",
+                background: "linear-gradient(180deg,#f8fbff 0%,#f3f6fb 100%)",
+            }}
+        >
             <Space direction="vertical" size={18} style={{ width: "100%" }}>
                 <Card
+                    variant="borderless"
                     style={{
                         borderRadius: 24,
-                        background:
-                            "linear-gradient(135deg, #eef5ff 0%, #ffffff 55%, #f6ffed 100%)",
+                        boxShadow: "0 14px 38px rgba(15, 23, 42, 0.08)",
                     }}
-                    bodyStyle={{ padding: 26 }}
+                    bodyStyle={{ padding: 22 }}
                 >
                     <Row
                         justify="space-between"
@@ -716,37 +746,37 @@ const TablePage = () => {
                         gutter={[16, 16]}
                     >
                         <Col>
-                            <Space direction="vertical" size={4}>
-                                <Title level={3} style={{ margin: 0 }}>
-                                    <CalendarOutlined /> Thời khóa biểu giáo
-                                    viên
-                                </Title>
+                            <Space align="start">
+                                <div
+                                    style={{
+                                        width: 44,
+                                        height: 44,
+                                        borderRadius: 14,
+                                        background: "#eff6ff",
+                                        color: "#1677ff",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        fontSize: 22,
+                                    }}
+                                >
+                                    <CalendarOutlined />
+                                </div>
 
-                                <Text type="secondary" style={{ fontSize: 15 }}>
-                                    Xem lịch dạy theo ngày, tuần hoặc tháng.
-                                </Text>
+                                <div>
+                                    <Title level={3} style={{ margin: 0 }}>
+                                        Thời khóa biểu giáo viên
+                                    </Title>
+
+                                    <Text type="secondary">
+                                        Xem lịch dạy theo ngày, tuần hoặc tháng
+                                    </Text>
+                                </div>
                             </Space>
                         </Col>
 
                         <Col>
                             <Space wrap>
-                                <Radio.Group
-                                    value={mode}
-                                    onChange={(e) => setMode(e.target.value)}
-                                    optionType="button"
-                                    buttonStyle="solid"
-                                >
-                                    <Radio.Button value="day">
-                                        Ngày
-                                    </Radio.Button>
-                                    <Radio.Button value="week">
-                                        Tuần
-                                    </Radio.Button>
-                                    <Radio.Button value="month">
-                                        Tháng
-                                    </Radio.Button>
-                                </Radio.Group>
-
                                 <Button
                                     icon={<LeftOutlined />}
                                     onClick={handlePrev}
@@ -760,18 +790,39 @@ const TablePage = () => {
                                     icon={<RightOutlined />}
                                     onClick={handleNext}
                                 />
+
+                                <Radio.Group
+                                    value={mode}
+                                    onChange={(e) => setMode(e.target.value)}
+                                    optionType="button"
+                                    buttonStyle="solid"
+                                >
+                                    <Radio.Button value="week">
+                                        Tuần
+                                    </Radio.Button>
+                                    <Radio.Button value="day">
+                                        Ngày
+                                    </Radio.Button>
+                                    <Radio.Button value="month">
+                                        Tháng
+                                    </Radio.Button>
+                                </Radio.Group>
                             </Space>
                         </Col>
                     </Row>
                 </Card>
 
-                <Card style={{ borderRadius: 20 }}>
-                    <Row
-                        justify="space-between"
-                        align="middle"
-                        gutter={[16, 16]}
-                    >
+                <Card
+                    variant="borderless"
+                    style={{
+                        borderRadius: 18,
+                        boxShadow: "0 10px 26px rgba(15, 23, 42, 0.06)",
+                    }}
+                    bodyStyle={{ padding: "14px 18px" }}
+                >
+                    <Row justify="space-between" align="middle">
                         <Col>
+                            <Text type="secondary">Đang xem</Text>
                             <Title level={4} style={{ margin: 0 }}>
                                 {renderHeaderTitle()}
                             </Title>
@@ -783,8 +834,8 @@ const TablePage = () => {
                                 style={{ width: 150 }}
                                 onChange={(value) => setMode(value)}
                                 options={[
-                                    { label: "Theo ngày", value: "day" },
                                     { label: "Theo tuần", value: "week" },
+                                    { label: "Theo ngày", value: "day" },
                                     { label: "Theo tháng", value: "month" },
                                 ]}
                             />

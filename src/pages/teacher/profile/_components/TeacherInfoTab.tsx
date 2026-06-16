@@ -18,15 +18,23 @@ const TeacherInfoTab = ({ teacher }: any) => {
             </Descriptions.Item>
 
             <Descriptions.Item label="Mã giáo viên">
-                {teacher?.code || teacher?.id}
+                {teacher?.msgv || teacher?.code || teacher?.id || "-"}
             </Descriptions.Item>
 
             <Descriptions.Item label="Khoa / Bộ môn">
-                {teacher?.department || "-"}
+                {teacher?.department?.name || "-"}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Chuyên môn">
+                {teacher?.specialization || "-"}
             </Descriptions.Item>
 
             <Descriptions.Item label="Trạng thái">
-                <Tag color="green">Đang hoạt động</Tag>
+                <Tag color={teacher?.isActive === false ? "red" : "green"}>
+                    {teacher?.isActive === false
+                        ? "Ngưng hoạt động"
+                        : "Đang hoạt động"}
+                </Tag>
             </Descriptions.Item>
         </Descriptions>
     );

@@ -11,6 +11,7 @@ import DepartmentPage from "@/pages/admin/department";
 import DepartmentDetailPage from "@/pages/admin/department/_components/detail";
 import FacultyPage from "@/pages/admin/faculty";
 import FaculltyDetailPage from "@/pages/admin/faculty/_components/detail";
+import PaymentManagementPage from "@/pages/admin/finance";
 import MajorManagerPage from "@/pages/admin/major";
 import MajorDetailPage from "@/pages/admin/major/_components/detail";
 import RoomPage from "@/pages/admin/room";
@@ -146,6 +147,16 @@ export const adminRoutes: RouteObject = {
                 {
                     path: ":id",
                     element: <CourseOfferingDetailPage />,
+                },
+            ],
+        },
+        {
+            path: "/manage-finance",
+            element: <LayoutDefault />,
+            children: [
+                {
+                    index: true,
+                    element: <PaymentManagementPage />,
                 },
             ],
         },

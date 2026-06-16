@@ -1,49 +1,62 @@
 import { Link } from "react-router-dom";
-import { AppstoreOutlined, ExceptionOutlined } from "@ant-design/icons";
+import {
+    DashboardOutlined,
+    TeamOutlined,
+    BookOutlined,
+    ReadOutlined,
+    BankOutlined,
+    DollarOutlined,
+    UserOutlined,
+    ApartmentOutlined,
+    ProfileOutlined,
+    CalendarOutlined,
+    ScheduleOutlined,
+    HomeOutlined,
+    BuildOutlined,
+    AuditOutlined,
+    WalletOutlined,
+} from "@ant-design/icons";
 import type { MenuItem } from "@/helper/menu";
 
 export const adminMenuItems: MenuItem[] = [
     {
         label: <Link to="/">Dashboard</Link>,
         key: "/",
-        icon: <AppstoreOutlined />,
+        icon: <DashboardOutlined />,
     },
+
     {
         label: "Quản lý người dùng",
         key: "/manage-user",
-        icon: <ExceptionOutlined />,
+        icon: <TeamOutlined />,
         children: [
             {
                 label: <Link to="/manage-user/users">Người dùng</Link>,
                 key: "/manage-user/users",
-                icon: <ExceptionOutlined />,
+                icon: <UserOutlined />,
             },
-            // {
-            //     label: <Link to="/manage-user/roles">Phân quyền</Link>,
-            //     key: "/manage-user/roles",
-            //     icon: <ExceptionOutlined />,
-            // },
         ],
     },
+
     {
         label: "Quản lý Chương trình Đào tạo",
         key: "/manage-curriculum",
-        icon: <ExceptionOutlined />,
+        icon: <BookOutlined />,
         children: [
             {
                 label: <Link to="/manage-curriculum/faculty">Khoa</Link>,
                 key: "/manage-curriculum/faculty",
-                icon: <ExceptionOutlined />,
+                icon: <BankOutlined />,
             },
             {
                 label: <Link to="/manage-curriculum/department">Bộ môn</Link>,
                 key: "/manage-curriculum/department",
-                icon: <ExceptionOutlined />,
+                icon: <ApartmentOutlined />,
             },
             {
                 label: <Link to="/manage-curriculum/major">Chuyên ngành</Link>,
                 key: "/manage-curriculum/major",
-                icon: <ExceptionOutlined />,
+                icon: <ProfileOutlined />,
             },
             {
                 label: (
@@ -52,25 +65,25 @@ export const adminMenuItems: MenuItem[] = [
                     </Link>
                 ),
                 key: "/manage-curriculum/course",
-                icon: <ExceptionOutlined />,
+                icon: <ReadOutlined />,
             },
-
             {
                 label: <Link to="/manage-curriculum/subject">Môn học</Link>,
                 key: "/manage-curriculum/subject",
-                icon: <ExceptionOutlined />,
+                icon: <BookOutlined />,
             },
         ],
     },
+
     {
         label: "Quản lý Môn học và lớp học",
         key: "/manage-subject",
-        icon: <ExceptionOutlined />,
+        icon: <ReadOutlined />,
         children: [
             {
                 label: <Link to="/manage-subject/term">Học kỳ</Link>,
                 key: "/manage-subject/term",
-                icon: <ExceptionOutlined />,
+                icon: <CalendarOutlined />,
             },
             {
                 label: (
@@ -79,24 +92,25 @@ export const adminMenuItems: MenuItem[] = [
                     </Link>
                 ),
                 key: "/manage-subject/course-offering",
-                icon: <ExceptionOutlined />,
+                icon: <ReadOutlined />,
             },
             {
                 label: <Link to="/manage-subject/class">Lớp học</Link>,
                 key: "/manage-subject/class",
-                icon: <ExceptionOutlined />,
+                icon: <HomeOutlined />,
             },
             {
                 label: <Link to="/manage-subject/schedule">Lịch học</Link>,
                 key: "/manage-subject/schedule",
-                icon: <ExceptionOutlined />,
+                icon: <ScheduleOutlined />,
             },
         ],
     },
+
     {
         label: "Quản lý Cơ sở & Phòng học",
         key: "/manage-campus-room",
-        icon: <ExceptionOutlined />,
+        icon: <BankOutlined />,
         children: [
             {
                 label: (
@@ -105,104 +119,37 @@ export const adminMenuItems: MenuItem[] = [
                     </Link>
                 ),
                 key: "/manage-campus-room/campus",
-                icon: <ExceptionOutlined />,
+                icon: <BuildOutlined />,
             },
             {
                 label: (
                     <Link to="/manage-campus-room/classrooms">Phòng học</Link>
                 ),
                 key: "/manage-campus-room/classrooms",
-                icon: <ExceptionOutlined />,
+                icon: <HomeOutlined />,
             },
         ],
     },
-    // {
-    //     label: "Quản lý Cơ sở vật chất",
-    //     key: "/manage-facility",
-    //     icon: <ExceptionOutlined />,
-    //     children: [
-    //         {
-    //             label: (
-    //                 <Link to="/manage-facility/facility">
-    //                     Quản lý Thiết bị theo số lượng
-    //                 </Link>
-    //             ),
-    //             key: "/manage-facility/facility",
-    //             icon: <ExceptionOutlined />,
-    //         },
-    //         {
-    //             label: (
-    //                 <Link to="/manage-facility/facility-items">
-    //                     Quản lý từng thiết bị cụ thể
-    //                 </Link>
-    //             ),
-    //             key: "/manage-facility/facility-items",
-    //             icon: <ExceptionOutlined />,
-    //         },
-    //         {
-    //             label: (
-    //                 <Link to="/manage-facility/device_loans">
-    //                     Quản lý mượn/trả thiết bị
-    //                 </Link>
-    //             ),
-    //             key: "/manage-facility/device_loans",
-    //             icon: <ExceptionOutlined />,
-    //         },
-    //         {
-    //             label: <Link to="/manage-facility/supplier">Nhà cung cấp</Link>,
-    //             key: "/manage-facility/supplier",
-    //             icon: <ExceptionOutlined />,
-    //         },
-    //         {
-    //             label: (
-    //                 <Link to="/manage-facility/facility-history">
-    //                     Lịch sử bố trí thiết bị
-    //                 </Link>
-    //             ),
-    //             key: "/manage-facility/facility-history",
-    //             icon: <ExceptionOutlined />,
-    //         },
-    //         {
-    //             label: (
-    //                 <Link to="/manage-facility/maintenance-history">
-    //                     Lịch sử bảo trì
-    //                 </Link>
-    //             ),
-    //             key: "/manage-facility/maintenance-history",
-    //             icon: <ExceptionOutlined />,
-    //         },
-    //         {
-    //             label: (
-    //                 <Link to="/manage-facility/facility-status-logs">
-    //                     Lịch sử thay đổi trạng thái
-    //                 </Link>
-    //             ),
-    //             key: "/manage-facility/facility-status-logs",
-    //             icon: <ExceptionOutlined />,
-    //         },
-    //     ],
-    // },
-    // {
-    //     label: "Quản lý người cán bộ giảng viên",
-    //     key: "/manage-teacher",
-    //     icon: <ExceptionOutlined />,
-    //     children: [
-    //         {
-    //             label: (
-    //                 <Link to="/manage-teacher/roles">Lịch sử chấm công</Link>
-    //             ),
-    //             key: "/manage-teacher/roles",
-    //             icon: <ExceptionOutlined />,
-    //         },
-    //         {
-    //             label: (
-    //                 <Link to="/manage-teacher/salary">
-    //                     Tính lương giảng viên
-    //                 </Link>
-    //             ),
-    //             key: "/manage-teacher/salary",
-    //             icon: <ExceptionOutlined />,
-    //         },
-    //     ],
-    // },
+
+    {
+        label: "Tài chính",
+        key: "/manage-finance",
+        icon: <DollarOutlined />,
+        children: [
+            {
+                label: <Link to="/manage-finance">Quản lý thanh toán</Link>,
+                key: "/manage-finance/payments",
+                icon: <WalletOutlined />,
+            },
+            // {
+            //     label: (
+            //         <Link to="/manage-finance/salary">
+            //             Tính lương giảng viên
+            //         </Link>
+            //     ),
+            //     key: "/manage-finance/salary",
+            //     icon: <AuditOutlined />,
+            // },
+        ],
+    },
 ];

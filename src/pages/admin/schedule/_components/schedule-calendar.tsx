@@ -107,6 +107,31 @@ const dayLabelMap: Record<number, string> = {
     8: "Chủ nhật",
 };
 
+const LESSON_TIME_MAP: Record<number, { start: string; end: string }> = {
+    1: { start: "07:00", end: "07:50" },
+    2: { start: "07:50", end: "08:40" },
+    3: { start: "08:50", end: "09:40" },
+    4: { start: "09:40", end: "10:30" },
+    5: { start: "10:40", end: "11:30" },
+    6: { start: "13:00", end: "13:50" },
+    7: { start: "13:50", end: "14:40" },
+    8: { start: "14:50", end: "15:40" },
+    9: { start: "15:40", end: "16:30" },
+    10: { start: "19:55", end: "20:30" },
+    11: { start: "20:30", end: "21:20" },
+};
+
+const getLessonTimeText = (lessonStart: number, lessonEnd: number) => {
+    const start = LESSON_TIME_MAP[lessonStart]?.start;
+    const end = LESSON_TIME_MAP[lessonEnd]?.end;
+
+    if (!start || !end) {
+        return `Tiết ${lessonStart}-${lessonEnd}`;
+    }
+
+    return `${start} - ${end}`;
+};
+
 const colorClasses = [
     "event-color-1",
     "event-color-2",
@@ -120,6 +145,7 @@ const getColorClass = (value?: string) => {
     if (!value) return colorClasses[0];
 
     let hash = 0;
+
     for (let i = 0; i < value.length; i += 1) {
         hash = value.charCodeAt(i) + ((hash << 5) - hash);
     }
@@ -133,7 +159,6 @@ const buildCalendarRows = (value: Dayjs): CalendarCell[][] => {
 
     const startOffset = startOfMonth.day();
     const totalDays = endOfMonth.date();
-
     const totalCells = startOffset + totalDays;
     const rowCount = Math.ceil(totalCells / 7);
 
@@ -145,6 +170,7 @@ const buildCalendarRows = (value: Dayjs): CalendarCell[][] => {
 
         for (let col = 0; col < 7; col += 1) {
             const date = gridStart.add(row * 7 + col, "day");
+
             cells.push({
                 date,
                 inCurrentMonth: date.month() === value.month(),
@@ -159,6 +185,7 @@ const buildCalendarRows = (value: Dayjs): CalendarCell[][] => {
 
 const ScheduleCalendar = ({ reloadKey }: ScheduleCalendarProps) => {
     const { message } = App.useApp();
+
     const [loading, setLoading] = useState(false);
     const [schedules, setSchedules] = useState<ISchedule[]>([]);
     const [value, setValue] = useState(dayjs());
@@ -174,6 +201,7 @@ const ScheduleCalendar = ({ reloadKey }: ScheduleCalendarProps) => {
             });
 
             const res = await getSchedulesAPI(query);
+
             setSchedules(res?.data?.result ?? []);
         } catch {
             message.error("Không thể tải lịch học");
@@ -206,6 +234,7 @@ const ScheduleCalendar = ({ reloadKey }: ScheduleCalendarProps) => {
                 if (jsDay === targetDay) {
                     const key = cursor.format("YYYY-MM-DD");
                     const current = map.get(key) ?? [];
+
                     current.push(schedule);
                     map.set(key, current);
                 }
@@ -217,7 +246,13 @@ const ScheduleCalendar = ({ reloadKey }: ScheduleCalendarProps) => {
         map.forEach((items, key) => {
             map.set(
                 key,
-                items.sort((a, b) => a.lessonStart - b.lessonStart),
+                items.sort((a, b) => {
+                    if (a.lessonStart !== b.lessonStart) {
+                        return a.lessonStart - b.lessonStart;
+                    }
+
+                    return a.lessonEnd - b.lessonEnd;
+                }),
             );
         });
 
@@ -270,11 +305,22 @@ const ScheduleCalendar = ({ reloadKey }: ScheduleCalendarProps) => {
                 </div>
 
                 <div className="schedule-tooltip__row">
-                    <span>Thời gian:</span>
+                    <span>Tiết học:</span>
                     <strong>
-                        {dayLabelMap[item.dayOfWeek]} • Tiết {item.lessonStart}-
-                        {item.lessonEnd}
+                        Tiết {item.lessonStart}-{item.lessonEnd}
                     </strong>
+                </div>
+
+                <div className="schedule-tooltip__row">
+                    <span>Giờ học:</span>
+                    <strong>
+                        {getLessonTimeText(item.lessonStart, item.lessonEnd)}
+                    </strong>
+                </div>
+
+                <div className="schedule-tooltip__row">
+                    <span>Thứ:</span>
+                    <strong>{dayLabelMap[item.dayOfWeek]}</strong>
                 </div>
 
                 <div className="schedule-tooltip__row">
@@ -314,9 +360,13 @@ const ScheduleCalendar = ({ reloadKey }: ScheduleCalendarProps) => {
                                 <div className="schedule-tooltip__item-title">
                                     {subject}
                                 </div>
+
                                 <div className="schedule-tooltip__item-sub">
-                                    {teacher} • Tiết {item.lessonStart}-
-                                    {item.lessonEnd}
+                                    {teacher} •{" "}
+                                    {getLessonTimeText(
+                                        item.lessonStart,
+                                        item.lessonEnd,
+                                    )}
                                 </div>
                             </div>
                         );
@@ -334,6 +384,7 @@ const ScheduleCalendar = ({ reloadKey }: ScheduleCalendarProps) => {
                         <div className="schedule-day-view__title">
                             {value.format("DD/MM/YYYY")}
                         </div>
+
                         <div className="schedule-day-view__subtitle">
                             {value.format("dddd")}
                         </div>
@@ -349,6 +400,7 @@ const ScheduleCalendar = ({ reloadKey }: ScheduleCalendarProps) => {
                         >
                             ‹
                         </button>
+
                         <button
                             type="button"
                             className="schedule-calendar__nav-btn"
@@ -356,6 +408,7 @@ const ScheduleCalendar = ({ reloadKey }: ScheduleCalendarProps) => {
                         >
                             Hôm nay
                         </button>
+
                         <button
                             type="button"
                             className="schedule-calendar__nav-btn"
@@ -412,10 +465,19 @@ const ScheduleCalendar = ({ reloadKey }: ScheduleCalendarProps) => {
                                                 <div className="schedule-day-view__subject">
                                                     {subject}
                                                 </div>
+
                                                 <div className="schedule-day-view__time">
-                                                    Tiết {item.lessonStart}-
-                                                    {item.lessonEnd}
+                                                    {getLessonTimeText(
+                                                        item.lessonStart,
+                                                        item.lessonEnd,
+                                                    )}
                                                 </div>
+                                            </div>
+
+                                            <div className="schedule-day-view__lesson">
+                                                Tiết {item.lessonStart}-
+                                                {item.lessonEnd} •{" "}
+                                                {dayLabelMap[item.dayOfWeek]}
                                             </div>
 
                                             <div className="schedule-day-view__meta">
@@ -629,16 +691,25 @@ const ScheduleCalendar = ({ reloadKey }: ScheduleCalendarProps) => {
                                                                         }}
                                                                     >
                                                                         <div className="schedule-calendar__event-bar" />
+
                                                                         <div className="schedule-calendar__event-content">
                                                                             <div className="schedule-calendar__subject">
                                                                                 {
                                                                                     subject
                                                                                 }
                                                                             </div>
+
                                                                             <div className="schedule-calendar__teacher">
                                                                                 {
                                                                                     teacher
                                                                                 }
+                                                                            </div>
+
+                                                                            <div className="schedule-calendar__time">
+                                                                                {getLessonTimeText(
+                                                                                    item.lessonStart,
+                                                                                    item.lessonEnd,
+                                                                                )}
                                                                             </div>
                                                                         </div>
                                                                     </div>

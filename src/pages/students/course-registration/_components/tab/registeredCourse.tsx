@@ -37,6 +37,7 @@ export type RegisteredItem = {
             id?: number;
             semester?: string;
             year?: number;
+            isActive?: boolean;
         };
         adminClass?: {
             code?: string;

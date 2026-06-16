@@ -33,7 +33,7 @@ import {
     uploadChatFileAPI,
 } from "@/services/api";
 import { useCurrentApp } from "@/context/use.curent";
-import { socket } from "@/socket/socket";
+import { socket, connectSocket } from "@/socket/socket";
 
 const { Text, Title } = Typography;
 
@@ -58,7 +58,10 @@ const CourseChatSection = ({
     onSeen,
 }: CourseChatSectionProps) => {
     const chatRef = useRef<HTMLDivElement>(null);
-    const { user } = useCurrentApp();
+    const { user, isAuthenticated } = useCurrentApp();
+
+    const selectedConversationRef = useRef<any>(null);
+    const isActiveRef = useRef(isActive);
 
     const [conversations, setConversations] = useState<any[]>([]);
     const [selectedConversation, setSelectedConversation] = useState<any>(null);
@@ -75,6 +78,14 @@ const CourseChatSection = ({
 
     const [showScrollButton, setShowScrollButton] = useState(false);
     const [newMessageCount, setNewMessageCount] = useState(0);
+
+    useEffect(() => {
+        selectedConversationRef.current = selectedConversation;
+    }, [selectedConversation]);
+
+    useEffect(() => {
+        isActiveRef.current = isActive;
+    }, [isActive]);
 
     const isNearBottom = () => {
         const el = chatRef.current;
@@ -95,7 +106,7 @@ const CourseChatSection = ({
     };
 
     const markSeen = async (conversationId: number) => {
-        if (!isActive) return;
+        if (!isActiveRef.current) return;
 
         try {
             await seenConversationAPI(conversationId);
@@ -104,10 +115,7 @@ const CourseChatSection = ({
             setConversations((prev) =>
                 prev.map((item) =>
                     item.id === conversationId
-                        ? {
-                              ...item,
-                              unreadCount: 0,
-                          }
+                        ? { ...item, unreadCount: 0 }
                         : item,
                 ),
             );
@@ -116,21 +124,47 @@ const CourseChatSection = ({
         }
     };
 
-    const handleChatScroll = () => {
-        if (isNearBottom()) {
-            setShowScrollButton(false);
-            setNewMessageCount(0);
-        }
+    const joinCurrentRoom = () => {
+        const currentConversation = selectedConversationRef.current;
+
+        if (!currentConversation?.id) return;
+
+        socket.emit("conversation:join", {
+            conversationId: currentConversation.id,
+        });
     };
 
-    const clearPendingFile = () => {
-        if (pendingPreview) {
-            URL.revokeObjectURL(pendingPreview);
+    const leaveCurrentRoom = (conversationId?: number) => {
+        if (!conversationId) return;
+
+        socket.emit("conversation:leave", {
+            conversationId,
+        });
+    };
+
+    useEffect(() => {
+        if (!isAuthenticated) return;
+
+        const token = localStorage.getItem("access_token");
+
+        if (!token) return;
+
+        connectSocket(token);
+
+        const handleConnect = () => {
+            joinCurrentRoom();
+        };
+
+        socket.on("connect", handleConnect);
+
+        if (socket.connected) {
+            joinCurrentRoom();
         }
 
-        setPendingFile(null);
-        setPendingPreview("");
-    };
+        return () => {
+            socket.off("connect", handleConnect);
+        };
+    }, [isAuthenticated]);
 
     const fetchMessages = async (conversationId: number) => {
         try {
@@ -167,6 +201,9 @@ const CourseChatSection = ({
 
             if (data.length > 0) {
                 setSelectedConversation(data[0]);
+            } else {
+                setSelectedConversation(null);
+                setMessages([]);
             }
         } catch (error) {
             message.error("Không tải được danh sách chat");
@@ -182,22 +219,40 @@ const CourseChatSection = ({
     useEffect(() => {
         if (!selectedConversation?.id) return;
 
-        fetchMessages(selectedConversation.id);
+        const conversationId = selectedConversation.id;
 
-        socket.emit("conversation:join", {
-            conversationId: selectedConversation.id,
-        });
+        fetchMessages(conversationId);
+
+        const joinRoom = () => {
+            socket.emit("conversation:join", {
+                conversationId,
+            });
+        };
+
+        if (socket.connected) {
+            joinRoom();
+        } else {
+            const token = localStorage.getItem("access_token");
+
+            if (token) {
+                connectSocket(token);
+            }
+
+            socket.once("connect", joinRoom);
+        }
 
         if (isActive) {
-            markSeen(selectedConversation.id);
+            markSeen(conversationId);
         }
 
         return () => {
-            socket.emit("conversation:leave", {
-                conversationId: selectedConversation.id,
-            });
+            socket.off("connect", joinRoom);
+
+            if (socket.connected) {
+                leaveCurrentRoom(conversationId);
+            }
         };
-    }, [selectedConversation?.id]);
+    }, [selectedConversation?.id, isActive]);
 
     useEffect(() => {
         if (!isActive || !selectedConversation?.id) return;
@@ -207,10 +262,14 @@ const CourseChatSection = ({
 
     useEffect(() => {
         const handleNewMessage = (payload: any) => {
-            const newMessage = payload?.message;
-            if (!newMessage) return;
+            const newMessage = payload?.message || payload?.data || payload;
 
-            if (newMessage.conversationId === selectedConversation?.id) {
+            if (!newMessage?.conversationId) return;
+
+            const currentConversation = selectedConversationRef.current;
+            const active = isActiveRef.current;
+
+            if (newMessage.conversationId === currentConversation?.id) {
                 const nearBottom = isNearBottom();
 
                 setMessages((prev) => {
@@ -223,8 +282,8 @@ const CourseChatSection = ({
                     return [...prev, newMessage];
                 });
 
-                if (isActive) {
-                    markSeen(selectedConversation.id);
+                if (active) {
+                    markSeen(currentConversation.id);
                 }
 
                 if (nearBottom) {
@@ -240,12 +299,14 @@ const CourseChatSection = ({
                     item.id === newMessage.conversationId
                         ? {
                               ...item,
-                              lastMessage: payload.conversation?.lastMessage,
+                              lastMessage:
+                                  payload?.conversation?.lastMessage ||
+                                  newMessage,
                               lastMessageAt:
-                                  payload.conversation?.lastMessageAt,
+                                  payload?.conversation?.lastMessageAt ||
+                                  newMessage.createdAt,
                               unreadCount:
-                                  item.id === selectedConversation?.id &&
-                                  isActive
+                                  item.id === currentConversation?.id && active
                                       ? 0
                                       : item.id === newMessage.conversationId
                                         ? (item.unreadCount || 0) + 1
@@ -257,6 +318,9 @@ const CourseChatSection = ({
         };
 
         const handleConversationUpdated = (payload: any) => {
+            const currentConversation = selectedConversationRef.current;
+            const active = isActiveRef.current;
+
             if (
                 courseOfferingId &&
                 payload?.courseOfferingId &&
@@ -273,8 +337,7 @@ const CourseChatSection = ({
                               lastMessage: payload.lastMessage,
                               lastMessageAt: payload.lastMessageAt,
                               unreadCount:
-                                  item.id === selectedConversation?.id &&
-                                  isActive
+                                  item.id === currentConversation?.id && active
                                       ? 0
                                       : payload.unreadCount,
                           }
@@ -283,6 +346,9 @@ const CourseChatSection = ({
             );
         };
 
+        socket.off("message:new", handleNewMessage);
+        socket.off("conversation:updated", handleConversationUpdated);
+
         socket.on("message:new", handleNewMessage);
         socket.on("conversation:updated", handleConversationUpdated);
 
@@ -290,7 +356,7 @@ const CourseChatSection = ({
             socket.off("message:new", handleNewMessage);
             socket.off("conversation:updated", handleConversationUpdated);
         };
-    }, [selectedConversation?.id, isActive, courseOfferingId]);
+    }, [courseOfferingId]);
 
     useEffect(() => {
         return () => {
@@ -299,6 +365,22 @@ const CourseChatSection = ({
             }
         };
     }, [pendingPreview]);
+
+    const handleChatScroll = () => {
+        if (isNearBottom()) {
+            setShowScrollButton(false);
+            setNewMessageCount(0);
+        }
+    };
+
+    const clearPendingFile = () => {
+        if (pendingPreview) {
+            URL.revokeObjectURL(pendingPreview);
+        }
+
+        setPendingFile(null);
+        setPendingPreview("");
+    };
 
     const handleEmojiClick = (emojiData: any) => {
         setChatInput((prev) => prev + emojiData.emoji);
@@ -871,6 +953,26 @@ const CourseChatSection = ({
                                         setChatInput(e.target.value)
                                     }
                                     onPressEnter={handleSendMessage}
+                                    onPaste={(e) => {
+                                        const items = e.clipboardData?.items;
+
+                                        if (!items) return;
+
+                                        for (const item of items) {
+                                            if (
+                                                item.type.startsWith("image/")
+                                            ) {
+                                                const file = item.getAsFile();
+
+                                                if (file) {
+                                                    handleSelectFile(file);
+                                                    message.success(
+                                                        "Đã dán ảnh chụp màn hình",
+                                                    );
+                                                }
+                                            }
+                                        }
+                                    }}
                                 />
 
                                 <Button

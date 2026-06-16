@@ -1,6 +1,5 @@
 import {
     Avatar,
-    Badge,
     Button,
     Card,
     Col,
@@ -32,40 +31,33 @@ type TCourseClass = {
     id: number;
     status: string;
     unreadCount?: number;
-
     term: {
         id: number;
         year: number;
         semester: string;
         isActive: boolean;
     };
-
     adminClass?: {
         id: number;
         name: string;
         code?: string;
     };
-
     teacherSubject: {
         id: number;
-
         subject: {
             id: number;
             code: string;
             name: string;
             credit: number;
         };
-
         teacher: {
             id: number;
-
             user?: {
                 name?: string;
                 avatar?: string;
             };
         };
     };
-
     schedules?: {
         id: number;
         dayOfWeek: number;
@@ -75,8 +67,6 @@ type TCourseClass = {
             name: string;
         };
     }[];
-
-    registrationsCount?: number;
 };
 
 const dayMap: Record<number, string> = {
@@ -106,12 +96,9 @@ const CourseClassPage = () => {
     const fetchCourses = async (termId?: number) => {
         try {
             setLoading(true);
-
             const res = await getMyTeachingCoursesAPI(termId);
-
             const data =
                 res?.data?.result || res?.data?.data || res?.data || [];
-
             setCourses(data);
         } catch (error) {
             console.log(error);
@@ -124,9 +111,7 @@ const CourseClassPage = () => {
     const fetchTerms = async () => {
         try {
             const res = await getTermsAPI("current=1&pageSize=100");
-
             const data = res?.data?.result || [];
-
             const activeTerm = data.find((item: ITerm) => item.isActive);
 
             if (activeTerm) {
@@ -143,7 +128,6 @@ const CourseClassPage = () => {
 
     const fetchTermOptions = async () => {
         const res = await getTermsAPI("current=1&pageSize=100");
-
         const data = res?.data?.result || [];
 
         return data.map((item: ITerm) => ({
@@ -188,17 +172,13 @@ const CourseClassPage = () => {
     const filteredCourses = useMemo(() => {
         return courses.filter((item) => {
             const keyword = search.trim().toLowerCase();
-
             if (!keyword) return true;
 
             const subjectName =
                 item.teacherSubject?.subject?.name?.toLowerCase() || "";
-
             const subjectCode =
                 item.teacherSubject?.subject?.code?.toLowerCase() || "";
-
             const adminClassName = item.adminClass?.name?.toLowerCase() || "";
-
             const adminClassCode = item.adminClass?.code?.toLowerCase() || "";
 
             return (
@@ -252,11 +232,11 @@ const CourseClassPage = () => {
                                     size="large"
                                     style={{ width: "100%" }}
                                     placeholder="Chọn học kỳ"
-                                    onChange={(value) => {
+                                    onChange={(value) =>
                                         setTermSelected(
                                             value as IOptionSelect | undefined,
-                                        );
-                                    }}
+                                        )
+                                    }
                                     showSearch
                                     labelInValue
                                     fetchOptions={fetchTermOptions}
@@ -302,274 +282,353 @@ const CourseClassPage = () => {
                         <Empty description="Không có lớp học nào" />
                     </Card>
                 ) : (
-                    <Row gutter={[20, 20]}>
+                    <Row gutter={[24, 24]} align="stretch">
                         {filteredCourses.map((course) => {
                             const subject = course.teacherSubject.subject;
-                            const hasUnread = (course.unreadCount || 0) > 0;
+                            const unreadCount = course.unreadCount || 0;
+                            const hasUnread = unreadCount > 0;
 
                             return (
                                 <Col
                                     xs={24}
                                     sm={24}
                                     md={12}
+                                    lg={8}
                                     xl={8}
+                                    xxl={8}
                                     key={course.id}
+                                    style={{ display: "flex" }}
                                 >
-                                    <Badge
-                                        count={course.unreadCount || 0}
-                                        overflowCount={99}
-                                        offset={[-8, 8]}
+                                    <Card
+                                        hoverable
                                         style={{
-                                            boxShadow:
-                                                "0 4px 12px rgba(255,77,79,0.35)",
+                                            width: "100%",
+                                            height: 460,
+                                            borderRadius: 24,
+                                            overflow: "visible",
+                                            position: "relative",
+                                            border: hasUnread
+                                                ? "1px solid #ff7875"
+                                                : "1px solid #f0f0f0",
+                                            boxShadow: hasUnread
+                                                ? "0 8px 24px rgba(255,77,79,0.12)"
+                                                : undefined,
+                                        }}
+                                        bodyStyle={{
+                                            height: "100%",
+                                            padding: 20,
+                                            display: "flex",
+                                            flexDirection: "column",
                                         }}
                                     >
-                                        <Card
-                                            hoverable
-                                            style={{
-                                                borderRadius: 24,
-                                                overflow: "hidden",
-                                                height: "100%",
-                                                border: hasUnread
-                                                    ? "1px solid #ff7875"
-                                                    : "1px solid #f0f0f0",
-                                                boxShadow: hasUnread
-                                                    ? "0 8px 24px rgba(255,77,79,0.12)"
-                                                    : undefined,
-                                            }}
-                                            bodyStyle={{ padding: 20 }}
-                                        >
+                                        {hasUnread && (
                                             <div
                                                 style={{
+                                                    position: "absolute",
+                                                    top: -8,
+                                                    right: -8,
+
+                                                    minWidth: 28,
+                                                    height: 28,
+                                                    padding: "0 8px",
+
                                                     display: "flex",
-                                                    justifyContent:
-                                                        "space-between",
-                                                    alignItems: "flex-start",
-                                                    marginBottom: 18,
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+
+                                                    borderRadius: "50px",
+
+                                                    background: "#ff4d4f",
+                                                    color: "#fff",
+
+                                                    fontSize: 12,
+                                                    fontWeight: 700,
+
+                                                    border: "2px solid rgba(255,255,255,0.5)",
+
+                                                    boxShadow:
+                                                        "0 6px 18px rgba(255,77,79,0.45)",
                                                 }}
                                             >
-                                                <Space align="start">
-                                                    <Avatar
-                                                        size={56}
-                                                        style={{
-                                                            background:
-                                                                "#1677ff",
-                                                            fontSize: 22,
-                                                            fontWeight: 700,
-                                                        }}
-                                                    >
-                                                        {subject.code?.slice(
-                                                            0,
-                                                            2,
-                                                        ) || "MH"}
-                                                    </Avatar>
-
-                                                    <div>
-                                                        <Title
-                                                            level={5}
-                                                            style={{
-                                                                margin: 0,
-                                                            }}
-                                                        >
-                                                            {subject.name}
-                                                        </Title>
-
-                                                        <Text type="secondary">
-                                                            {subject.code}
-                                                        </Text>
-                                                    </div>
-                                                </Space>
-
-                                                <Space>
-                                                    {hasUnread && (
-                                                        <Tag color="red">
-                                                            Tin mới
-                                                        </Tag>
-                                                    )}
-
-                                                    <Tag
-                                                        color={
-                                                            statusColorMap[
-                                                                course.status
-                                                            ] || "default"
-                                                        }
-                                                    >
-                                                        {course.status}
-                                                    </Tag>
-                                                </Space>
+                                                {unreadCount > 99
+                                                    ? "99+"
+                                                    : unreadCount}
                                             </div>
+                                        )}
 
+                                        <div
+                                            style={{
+                                                minHeight: 82,
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "flex-start",
+                                                gap: 12,
+                                                marginBottom: 18,
+                                                paddingRight: hasUnread
+                                                    ? 26
+                                                    : 0,
+                                            }}
+                                        >
                                             <Space
-                                                direction="vertical"
-                                                size={14}
-                                                style={{ width: "100%" }}
+                                                align="start"
+                                                style={{
+                                                    flex: 1,
+                                                    minWidth: 0,
+                                                }}
                                             >
-                                                <div
+                                                <Avatar
+                                                    size={56}
                                                     style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 10,
+                                                        background: "#1677ff",
+                                                        fontSize: 22,
+                                                        fontWeight: 700,
+                                                        flexShrink: 0,
                                                     }}
                                                 >
-                                                    <BookOutlined />
-                                                    <Text>
-                                                        {subject.credit} tín chỉ
-                                                    </Text>
-                                                </div>
-
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 10,
-                                                    }}
-                                                >
-                                                    <CalendarOutlined />
-                                                    <Space size={6} wrap>
-                                                        <Text>
-                                                            {
-                                                                course.term
-                                                                    .semester
-                                                            }{" "}
-                                                            - {course.term.year}
-                                                        </Text>
-
-                                                        {course.term
-                                                            .isActive && (
-                                                            <Tag
-                                                                color="success"
-                                                                style={{
-                                                                    borderRadius: 999,
-                                                                    fontWeight: 600,
-                                                                    paddingInline: 10,
-                                                                }}
-                                                            >
-                                                                Đang hoạt động
-                                                            </Tag>
-                                                        )}
-                                                    </Space>
-                                                </div>
+                                                    {subject.code?.slice(
+                                                        0,
+                                                        2,
+                                                    ) || "MH"}
+                                                </Avatar>
 
                                                 <div
                                                     style={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 10,
+                                                        flex: 1,
+                                                        minWidth: 0,
                                                     }}
                                                 >
-                                                    <TeamOutlined />
-                                                    <Text>
-                                                        Lớp:{" "}
-                                                        {course.adminClass
-                                                            ?.name ||
-                                                            course.adminClass
-                                                                ?.code ||
-                                                            "Chưa có"}
-                                                    </Text>
-                                                </div>
-
-                                                <div>
-                                                    <Text strong>
-                                                        Lịch học:
-                                                    </Text>
-
-                                                    <div
+                                                    <Title
+                                                        level={5}
+                                                        ellipsis={{ rows: 2 }}
                                                         style={{
-                                                            marginTop: 10,
-                                                            display: "flex",
-                                                            flexWrap: "wrap",
-                                                            gap: 8,
+                                                            margin: 0,
+                                                            minHeight: 25,
+                                                            lineHeight: "22px",
                                                         }}
                                                     >
-                                                        {course.schedules
-                                                            ?.length ? (
-                                                            course.schedules.map(
-                                                                (schedule) => (
-                                                                    <Tag
-                                                                        key={
-                                                                            schedule.id
-                                                                        }
-                                                                        color="blue"
-                                                                        style={{
-                                                                            padding:
-                                                                                "6px 10px",
-                                                                            borderRadius: 999,
-                                                                        }}
-                                                                    >
-                                                                        {
-                                                                            dayMap[
-                                                                                schedule
-                                                                                    .dayOfWeek
-                                                                            ]
-                                                                        }{" "}
-                                                                        (
-                                                                        {
-                                                                            schedule.lessonStart
-                                                                        }
-                                                                        -
-                                                                        {
-                                                                            schedule.lessonEnd
-                                                                        }
-                                                                        )
-                                                                        {schedule
-                                                                            .room
-                                                                            ?.name
-                                                                            ? ` • ${schedule.room.name}`
-                                                                            : ""}
-                                                                    </Tag>
-                                                                ),
-                                                            )
-                                                        ) : (
-                                                            <Text type="secondary">
-                                                                Chưa có lịch học
-                                                            </Text>
-                                                        )}
-                                                    </div>
+                                                        {subject.name}
+                                                    </Title>
+
+                                                    <Text type="secondary">
+                                                        {subject.code}
+                                                    </Text>
                                                 </div>
                                             </Space>
 
                                             <div
                                                 style={{
-                                                    marginTop: 22,
+                                                    width: 92,
+                                                    flexShrink: 0,
                                                     display: "flex",
-                                                    justifyContent:
-                                                        "space-between",
-                                                    alignItems: "center",
+                                                    flexDirection: hasUnread
+                                                        ? "row"
+                                                        : "row-reverse",
+                                                    alignItems: "flex-end",
+                                                    gap: 6,
                                                 }}
                                             >
-                                                <Text type="secondary">
-                                                    Cập nhật{" "}
-                                                    {dayjs().format(
-                                                        "DD/MM/YYYY",
-                                                    )}
-                                                </Text>
+                                                {hasUnread && (
+                                                    <Tag
+                                                        color="red"
+                                                        style={{
+                                                            marginInlineEnd: 0,
+                                                        }}
+                                                    >
+                                                        Tin mới
+                                                    </Tag>
+                                                )}
 
-                                                <Button
-                                                    type="primary"
-                                                    size="middle"
-                                                    onClick={() => {
-                                                        setCourses((prev) =>
-                                                            prev.map((item) =>
-                                                                item.id ===
-                                                                course.id
-                                                                    ? {
-                                                                          ...item,
-                                                                          unreadCount: 0,
-                                                                      }
-                                                                    : item,
-                                                            ),
-                                                        );
-
-                                                        navigate(
-                                                            `${course.id}`,
-                                                        );
+                                                <Tag
+                                                    color={
+                                                        statusColorMap[
+                                                            course.status
+                                                        ] || "default"
+                                                    }
+                                                    style={{
+                                                        marginInlineEnd: 0,
                                                     }}
                                                 >
-                                                    Vào lớp
-                                                </Button>
+                                                    {course.status}
+                                                </Tag>
                                             </div>
-                                        </Card>
-                                    </Badge>
+                                        </div>
+
+                                        <Space
+                                            direction="vertical"
+                                            size={14}
+                                            style={{ width: "100%" }}
+                                        >
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 10,
+                                                    minHeight: 24,
+                                                }}
+                                            >
+                                                <BookOutlined />
+                                                <Text>
+                                                    {subject.credit} tín chỉ
+                                                </Text>
+                                            </div>
+
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 10,
+                                                    minHeight: 32,
+                                                }}
+                                            >
+                                                <CalendarOutlined />
+                                                <Space size={6} wrap>
+                                                    <Text>
+                                                        {course.term.semester} -{" "}
+                                                        {course.term.year}
+                                                    </Text>
+
+                                                    {course.term.isActive && (
+                                                        <Tag
+                                                            color="success"
+                                                            style={{
+                                                                borderRadius: 999,
+                                                                fontWeight: 600,
+                                                                paddingInline: 10,
+                                                                marginInlineEnd: 0,
+                                                            }}
+                                                        >
+                                                            Đang hoạt động
+                                                        </Tag>
+                                                    )}
+                                                </Space>
+                                            </div>
+
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 10,
+                                                    minHeight: 28,
+                                                }}
+                                            >
+                                                <TeamOutlined />
+                                                <Text
+                                                    ellipsis
+                                                    style={{
+                                                        maxWidth: 320,
+                                                    }}
+                                                >
+                                                    Lớp:{" "}
+                                                    {course.adminClass?.name ||
+                                                        course.adminClass
+                                                            ?.code ||
+                                                        "Chưa có"}
+                                                </Text>
+                                            </div>
+
+                                            <div>
+                                                <Text strong>Lịch học:</Text>
+
+                                                <div
+                                                    style={{
+                                                        marginTop: 10,
+                                                        height: 90,
+                                                        overflow: "hidden",
+                                                        display: "flex",
+                                                        flexWrap: "wrap",
+                                                        alignContent:
+                                                            "flex-start",
+                                                        gap: 8,
+                                                    }}
+                                                >
+                                                    {course.schedules
+                                                        ?.length ? (
+                                                        course.schedules.map(
+                                                            (schedule) => (
+                                                                <Tag
+                                                                    key={
+                                                                        schedule.id
+                                                                    }
+                                                                    color="blue"
+                                                                    style={{
+                                                                        padding:
+                                                                            "6px 10px",
+                                                                        borderRadius: 999,
+                                                                        marginInlineEnd: 0,
+                                                                        maxWidth:
+                                                                            "100%",
+                                                                    }}
+                                                                >
+                                                                    {
+                                                                        dayMap[
+                                                                            schedule
+                                                                                .dayOfWeek
+                                                                        ]
+                                                                    }{" "}
+                                                                    (
+                                                                    {
+                                                                        schedule.lessonStart
+                                                                    }
+                                                                    -
+                                                                    {
+                                                                        schedule.lessonEnd
+                                                                    }
+                                                                    )
+                                                                    {schedule
+                                                                        .room
+                                                                        ?.name
+                                                                        ? ` • ${schedule.room.name}`
+                                                                        : ""}
+                                                                </Tag>
+                                                            ),
+                                                        )
+                                                    ) : (
+                                                        <Text type="secondary">
+                                                            Chưa có lịch học
+                                                        </Text>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </Space>
+
+                                        <div
+                                            style={{
+                                                marginTop: "auto",
+                                                paddingTop: 20,
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                gap: 12,
+                                            }}
+                                        >
+                                            <Text type="secondary">
+                                                Cập nhật{" "}
+                                                {dayjs().format("DD/MM/YYYY")}
+                                            </Text>
+
+                                            <Button
+                                                type="primary"
+                                                size="middle"
+                                                onClick={() => {
+                                                    setCourses((prev) =>
+                                                        prev.map((item) =>
+                                                            item.id ===
+                                                            course.id
+                                                                ? {
+                                                                      ...item,
+                                                                      unreadCount: 0,
+                                                                  }
+                                                                : item,
+                                                        ),
+                                                    );
+
+                                                    navigate(`${course.id}`);
+                                                }}
+                                            >
+                                                Vào lớp
+                                            </Button>
+                                        </div>
+                                    </Card>
                                 </Col>
                             );
                         })}

@@ -15,6 +15,7 @@ const TeacherProfilePage = () => {
         setLoading(true);
         try {
             const res = await getTeacherProfileAPI();
+            console.log(res.data);
             if (res.data) setData(res.data);
         } finally {
             setLoading(false);

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
     Avatar,
     Button,
@@ -8,73 +8,50 @@ import {
     Descriptions,
     Divider,
     Empty,
-    List,
     Popconfirm,
+    Progress,
     Result,
     Row,
     Space,
     Spin,
+    Statistic,
+    Table,
     Tabs,
     Tag,
     Typography,
     message,
 } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import {
     ArrowLeftOutlined,
+    BarChartOutlined,
+    BookOutlined,
+    CheckCircleOutlined,
+    ClockCircleOutlined,
+    DeleteOutlined,
     EditOutlined,
     LockOutlined,
     UnlockOutlined,
-    DeleteOutlined,
     UserOutlined,
-    BookOutlined,
 } from "@ant-design/icons";
 import { ProCard } from "@ant-design/pro-components";
-import { getDetailUserAPI } from "@/services/api";
+import {
+    getDetailUserAPI,
+    getStudentLearningOverviewAPI,
+    getTeacherTeachingOverviewAPI,
+} from "@/services/api";
 
 const { Title, Text } = Typography;
 
 interface IRole {
     id: number;
     name: "ADMIN" | "TEACHER" | "STUDENT" | string;
-    description?: string;
-    isActive?: boolean;
 }
 
 interface IDepartment {
     id: number;
     name: string;
     code?: string;
-    description?: string;
-    facultyId?: number;
-    isActive?: boolean;
-}
-
-interface ISubject {
-    id: number;
-    name: string;
-    code: string;
-    credit?: number;
-    isActive?: boolean;
-    department_id?: number;
-}
-
-interface ITeacherSubject {
-    id: number;
-    teacherId: string;
-    subjectId: number;
-    createdAt?: string;
-    subject?: ISubject;
-}
-
-interface ITeacher {
-    id: number;
-    user_id: string;
-    msgv?: string;
-    specialization?: string | null;
-    degree?: string | null;
-    department_id?: number;
-    department?: IDepartment | null;
-    teacherSubjects?: ITeacherSubject[];
 }
 
 interface IStudent {
@@ -96,6 +73,15 @@ interface IStudent {
     } | null;
 }
 
+interface ITeacher {
+    id: number;
+    user_id: string;
+    msgv?: string;
+    specialization?: string | null;
+    degree?: string | null;
+    department?: IDepartment | null;
+}
+
 interface IUserDetail {
     id: string;
     name: string;
@@ -107,11 +93,45 @@ interface IUserDetail {
     isActive: boolean;
     createdAt?: string;
     updatedAt?: string;
-    deletedAt?: string | null;
     role?: IRole | null;
-    role_id?: number;
     teacher?: ITeacher | null;
     student?: IStudent | null;
+}
+
+interface ITeachingCourse {
+    id: number;
+    code: string;
+    subjectName: string;
+    subjectCode: string;
+    credit: number;
+    termName: string;
+    year: number;
+    status: "OPEN" | "CLOSED" | string;
+    totalStudents: number;
+}
+
+interface IStudentGrade {
+    id: number;
+    subjectName: string;
+    subjectCode: string;
+    credit: number;
+    termName: string;
+    year: number;
+    attendanceScore: number;
+    midtermScore: number;
+    finalScore: number;
+    totalScore: number;
+    letterGrade?: string | null;
+    isPassed: boolean;
+    isPublished: boolean;
+}
+
+interface IStudentLearningOverview {
+    totalCredits: number;
+    passedCredits: number;
+    gpa: number;
+    progressPercent: number;
+    grades: IStudentGrade[];
 }
 
 function formatGender(g?: string | null) {
@@ -129,33 +149,26 @@ function roleTag(role?: string) {
     return <Tag>{role}</Tag>;
 }
 
-async function fetchUserDetail(id: string): Promise<IUserDetail> {
-    const res = await getDetailUserAPI(id);
-
-    if (!res?.data) {
-        throw new Error("Failed to fetch user detail");
-    }
-
-    return res.data as IUserDetail;
-}
-
-/** TODO: thay bằng API thật */
 async function toggleActiveUser(_id: string | number, _toActive: boolean) {
     await new Promise((r) => setTimeout(r, 300));
 }
 
-/** TODO: thay bằng API thật */
 async function deleteUser(_id: string | number) {
     await new Promise((r) => setTimeout(r, 300));
 }
 
-export default function UserDetailPageDemo() {
+const UserDetailPageDemo = () => {
     const { id } = useParams();
     const navigate = useNavigate();
 
-    const [loading, setLoading] = useState<boolean>(true);
-    const [actionLoading, setActionLoading] = useState<boolean>(false);
+    const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState(false);
     const [data, setData] = useState<IUserDetail | null>(null);
+    const [teachingCourses, setTeachingCourses] = useState<ITeachingCourse[]>(
+        [],
+    );
+    const [learningOverview, setLearningOverview] =
+        useState<IStudentLearningOverview | null>(null);
 
     const role = data?.role?.name;
 
@@ -164,18 +177,35 @@ export default function UserDetailPageDemo() {
         return data.name?.trim() ? data.name : data.email;
     }, [data]);
 
-    const teacherSubjects = useMemo<ITeacherSubject[]>(() => {
-        return data?.teacher?.teacherSubjects ?? [];
-    }, [data]);
-
     useEffect(() => {
         if (!id) return;
 
         const init = async () => {
             try {
                 setLoading(true);
-                const res = await fetchUserDetail(id);
-                setData(res);
+
+                const res = await getDetailUserAPI(id);
+
+                if (!res?.data) {
+                    throw new Error("Failed to fetch user detail");
+                }
+
+                const user = res.data as IUserDetail;
+                setData(user);
+
+                if (user.role?.name === "TEACHER") {
+                    const teachingRes = await getTeacherTeachingOverviewAPI(
+                        user.id,
+                    );
+                    setTeachingCourses(teachingRes?.data || []);
+                }
+
+                if (user.role?.name === "STUDENT") {
+                    const learningRes = await getStudentLearningOverviewAPI(
+                        user.id,
+                    );
+                    setLearningOverview(learningRes?.data || null);
+                }
             } catch (error) {
                 message.error("Không tải được dữ liệu chi tiết.");
                 setData(null);
@@ -193,6 +223,7 @@ export default function UserDetailPageDemo() {
         try {
             setActionLoading(true);
             await toggleActiveUser(data.id, !data.isActive);
+
             setData((prev) =>
                 prev
                     ? {
@@ -201,6 +232,7 @@ export default function UserDetailPageDemo() {
                       }
                     : prev,
             );
+
             message.success(
                 data.isActive ? "Đã khoá tài khoản" : "Đã mở khoá tài khoản",
             );
@@ -227,64 +259,225 @@ export default function UserDetailPageDemo() {
     };
 
     const renderTeacherTeachingInfo = () => {
-        if (!teacherSubjects.length) {
+        const currentCourses = teachingCourses.filter(
+            (item) => item.status === "OPEN",
+        );
+
+        const oldCourses = teachingCourses.filter(
+            (item) => item.status !== "OPEN",
+        );
+
+        const columns: ColumnsType<ITeachingCourse> = [
+            {
+                title: "Môn học",
+                render: (_, record) => (
+                    <Space direction="vertical" size={0}>
+                        <Text strong>{record.subjectName}</Text>
+                        <Text type="secondary">
+                            {record.subjectCode} • {record.credit} tín chỉ
+                        </Text>
+                    </Space>
+                ),
+            },
+            {
+                title: "Lớp học phần",
+                dataIndex: "code",
+            },
+            {
+                title: "Học kỳ",
+                render: (_, record) => `${record.termName} - ${record.year}`,
+            },
+            {
+                title: "Sinh viên",
+                dataIndex: "totalStudents",
+                align: "center",
+            },
+            {
+                title: "Trạng thái",
+                align: "center",
+                render: (_, record) =>
+                    record.status === "OPEN" ? (
+                        <Tag color="green">Đang dạy</Tag>
+                    ) : (
+                        <Tag>Đã dạy</Tag>
+                    ),
+            },
+        ];
+
+        if (!teachingCourses.length) {
             return (
                 <Empty
-                    description="Giảng viên chưa được phân công môn học nào"
+                    description="Giảng viên chưa có môn giảng dạy"
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
                 />
             );
         }
 
         return (
-            <ProCard title="Môn giảng dạy" bordered>
-                <List
-                    grid={{
-                        gutter: 16,
-                        xs: 1,
-                        sm: 1,
-                        md: 2,
-                        lg: 2,
-                        xl: 3,
-                        xxl: 3,
-                    }}
-                    dataSource={teacherSubjects}
-                    renderItem={(item) => {
-                        const subject = item.subject;
+            <Space direction="vertical" size={16} style={{ width: "100%" }}>
+                <Row gutter={[16, 16]}>
+                    <Col xs={24} md={8}>
+                        <ProCard bordered>
+                            <Statistic
+                                title="Tổng môn"
+                                value={teachingCourses.length}
+                                prefix={<BookOutlined />}
+                            />
+                        </ProCard>
+                    </Col>
 
-                        return (
-                            <List.Item>
-                                <Card
-                                    hoverable
-                                    style={{ borderRadius: 12 }}
-                                    bodyStyle={{ padding: 16 }}
-                                >
-                                    <Space
-                                        align="start"
-                                        size={12}
-                                        style={{ width: "100%" }}
-                                    >
-                                        <Avatar
-                                            shape="square"
-                                            size={44}
-                                            icon={<BookOutlined />}
-                                        />
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <Text strong ellipsis>
-                                                {subject?.name || "N/A"}
-                                            </Text>
-                                            <br />
-                                            <Text type="secondary">
-                                                Mã môn: {subject?.code || "N/A"}
-                                            </Text>
-                                        </div>
-                                    </Space>
-                                </Card>
-                            </List.Item>
-                        );
-                    }}
-                />
-            </ProCard>
+                    <Col xs={24} md={8}>
+                        <ProCard bordered>
+                            <Statistic
+                                title="Đang dạy"
+                                value={currentCourses.length}
+                                prefix={<ClockCircleOutlined />}
+                                valueStyle={{ color: "#52c41a" }}
+                            />
+                        </ProCard>
+                    </Col>
+
+                    <Col xs={24} md={8}>
+                        <ProCard bordered>
+                            <Statistic
+                                title="Đã dạy"
+                                value={oldCourses.length}
+                                prefix={<CheckCircleOutlined />}
+                            />
+                        </ProCard>
+                    </Col>
+                </Row>
+
+                <ProCard title="Danh sách môn giảng dạy" bordered>
+                    <Table
+                        rowKey="id"
+                        columns={columns}
+                        dataSource={teachingCourses}
+                        pagination={{ pageSize: 5 }}
+                    />
+                </ProCard>
+            </Space>
+        );
+    };
+
+    const renderStudentLearningInfo = () => {
+        const grades = learningOverview?.grades || [];
+
+        const columns: ColumnsType<IStudentGrade> = [
+            {
+                title: "Môn học",
+                render: (_, record) => (
+                    <Space direction="vertical" size={0}>
+                        <Text strong>{record.subjectName}</Text>
+                        <Text type="secondary">
+                            {record.subjectCode} • {record.credit} tín chỉ
+                        </Text>
+                    </Space>
+                ),
+            },
+            {
+                title: "Học kỳ",
+                render: (_, record) => `${record.termName} - ${record.year}`,
+            },
+            {
+                title: "Quá trình",
+                dataIndex: "attendanceScore",
+                align: "center",
+            },
+            {
+                title: "Giữa kỳ",
+                dataIndex: "midtermScore",
+                align: "center",
+            },
+            {
+                title: "Cuối kỳ",
+                dataIndex: "finalScore",
+                align: "center",
+            },
+            {
+                title: "Tổng kết",
+                align: "center",
+                render: (_, record) =>
+                    record.isPublished ? (
+                        <Text strong>{record.totalScore}</Text>
+                    ) : (
+                        <Tag>Chưa công bố</Tag>
+                    ),
+            },
+            {
+                title: "Kết quả",
+                align: "center",
+                render: (_, record) =>
+                    !record.isPublished ? (
+                        <Tag>Chưa có</Tag>
+                    ) : record.isPassed ? (
+                        <Tag color="green">Đạt</Tag>
+                    ) : (
+                        <Tag color="red">Không đạt</Tag>
+                    ),
+            },
+        ];
+
+        return (
+            <Space direction="vertical" size={16} style={{ width: "100%" }}>
+                <Row gutter={[16, 16]}>
+                    <Col xs={24} md={6}>
+                        <ProCard bordered>
+                            <Statistic
+                                title="Tín chỉ đã học"
+                                value={learningOverview?.totalCredits || 0}
+                            />
+                        </ProCard>
+                    </Col>
+
+                    <Col xs={24} md={6}>
+                        <ProCard bordered>
+                            <Statistic
+                                title="Tín chỉ đạt"
+                                value={learningOverview?.passedCredits || 0}
+                                valueStyle={{ color: "#52c41a" }}
+                            />
+                        </ProCard>
+                    </Col>
+
+                    <Col xs={24} md={6}>
+                        <ProCard bordered>
+                            <Statistic
+                                title="GPA"
+                                value={learningOverview?.gpa || 0}
+                                precision={2}
+                                prefix={<BarChartOutlined />}
+                            />
+                        </ProCard>
+                    </Col>
+
+                    <Col xs={24} md={6}>
+                        <ProCard bordered>
+                            <Statistic
+                                title="Tiến trình"
+                                value={learningOverview?.progressPercent || 0}
+                                suffix="%"
+                            />
+                        </ProCard>
+                    </Col>
+                </Row>
+
+                <ProCard title="Tiến trình học tập" bordered>
+                    <Progress
+                        percent={learningOverview?.progressPercent || 0}
+                        status="active"
+                    />
+                </ProCard>
+
+                <ProCard title="Bảng điểm" bordered>
+                    <Table
+                        rowKey="id"
+                        columns={columns}
+                        dataSource={grades}
+                        pagination={{ pageSize: 5 }}
+                    />
+                </ProCard>
+            </Space>
         );
     };
 
@@ -331,10 +524,12 @@ export default function UserDetailPageDemo() {
                                     icon={<UserOutlined />}
                                     src={data.avatar || undefined}
                                 />
+
                                 <div style={{ textAlign: "center" }}>
                                     <Title level={4} style={{ margin: 0 }}>
                                         {headerName}
                                     </Title>
+
                                     <Space size={8} wrap>
                                         {roleTag(role)}
                                         {data.isActive ? (
@@ -360,15 +555,19 @@ export default function UserDetailPageDemo() {
                                 <Descriptions.Item label="Họ tên">
                                     {data.name || "N/A"}
                                 </Descriptions.Item>
+
                                 <Descriptions.Item label="Email">
                                     {data.email || "N/A"}
                                 </Descriptions.Item>
+
                                 <Descriptions.Item label="Giới tính">
                                     {formatGender(data.gender)}
                                 </Descriptions.Item>
+
                                 <Descriptions.Item label="Số điện thoại">
                                     {data.phone || "N/A"}
                                 </Descriptions.Item>
+
                                 <Descriptions.Item label="Địa chỉ" span={2}>
                                     {data.address || "N/A"}
                                 </Descriptions.Item>
@@ -387,13 +586,16 @@ export default function UserDetailPageDemo() {
                                     <Descriptions.Item label="MSGV">
                                         {data.teacher?.msgv || "N/A"}
                                     </Descriptions.Item>
+
                                     <Descriptions.Item label="Bộ môn">
                                         {data.teacher?.department?.name ||
                                             "N/A"}
                                     </Descriptions.Item>
+
                                     <Descriptions.Item label="Học vị">
                                         {data.teacher?.degree || "N/A"}
                                     </Descriptions.Item>
+
                                     <Descriptions.Item label="Chuyên môn">
                                         {data.teacher?.specialization || "N/A"}
                                     </Descriptions.Item>
@@ -411,17 +613,20 @@ export default function UserDetailPageDemo() {
                                     <Descriptions.Item label="MSSV">
                                         {data.student?.mssv || "N/A"}
                                     </Descriptions.Item>
+
                                     <Descriptions.Item label="Khoá học">
                                         {data.student?.yearOfAdmission?.year ||
                                             "N/A"}
                                     </Descriptions.Item>
+
                                     <Descriptions.Item label="Chuyên ngành">
                                         {data.student?.major?.name || "N/A"}
                                     </Descriptions.Item>
+
                                     <Descriptions.Item label="Lớp">
-                                        {data.student?.adminClass
-                                            ? `${data.student.adminClass.name}`
-                                            : "N/A"}
+                                        {data.student?.adminClass?.name ||
+                                            data.student?.adminClass?.code ||
+                                            "N/A"}
                                     </Descriptions.Item>
                                 </Descriptions>
                             </ProCard>
@@ -451,9 +656,7 @@ export default function UserDetailPageDemo() {
                 role === "TEACHER" ? (
                     renderTeacherTeachingInfo()
                 ) : role === "STUDENT" ? (
-                    <ProCard bordered>
-                        <Text>Tab học tập của sinh viên sẽ làm sau.</Text>
-                    </ProCard>
+                    renderStudentLearningInfo()
                 ) : (
                     <ProCard bordered>
                         <Text>ADMIN không có dữ liệu theo vai trò.</Text>
@@ -471,6 +674,7 @@ export default function UserDetailPageDemo() {
                                 ? new Date(data.createdAt).toLocaleString()
                                 : "N/A"}
                         </Descriptions.Item>
+
                         <Descriptions.Item label="Cập nhật">
                             {data.updatedAt
                                 ? new Date(data.updatedAt).toLocaleString()
@@ -499,13 +703,14 @@ export default function UserDetailPageDemo() {
                                 <Title level={4} style={{ margin: 0 }}>
                                     {headerName}
                                 </Title>
+
                                 <Text type="secondary">
                                     Chi tiết thông tin người dùng
                                 </Text>
                             </div>
                         </Space>
                     </Col>
-
+                    {/* 
                     <Col>
                         <Space wrap>
                             <Button
@@ -548,7 +753,7 @@ export default function UserDetailPageDemo() {
                                 </Button>
                             </Popconfirm>
                         </Space>
-                    </Col>
+                    </Col> */}
                 </Row>
 
                 <Divider style={{ margin: "16px 0" }} />
@@ -557,4 +762,6 @@ export default function UserDetailPageDemo() {
             </ProCard>
         </div>
     );
-}
+};
+
+export default UserDetailPageDemo;

@@ -2,14 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     App,
+    Avatar,
+    Badge,
     Button,
     Card,
     Col,
     Descriptions,
     Empty,
+    Progress,
     Row,
     Space,
     Spin,
+    Statistic,
     Table,
     Tag,
     Typography,
@@ -18,6 +22,8 @@ import {
     ArrowLeftOutlined,
     BookOutlined,
     CalendarOutlined,
+    ClockCircleOutlined,
+    HomeOutlined,
     ReadOutlined,
     ReloadOutlined,
     TeamOutlined,
@@ -29,129 +35,9 @@ import {
     getCourseOfferingDetailAPI,
     getLessonByCourseOfferingAPI,
 } from "@/services/api";
+import { LESSON_TIME_MAP } from "@/types/constans";
 
 const { Title, Text } = Typography;
-
-type TTeacherUser = {
-    id?: string;
-    name?: string;
-    email?: string;
-};
-
-type TTeacher = {
-    id?: number;
-    msgv?: string;
-    degree?: string;
-    specialization?: string;
-    user?: TTeacherUser;
-};
-
-type TSubject = {
-    id?: number;
-    code?: string;
-    name?: string;
-    credit?: number;
-};
-
-type TTeacherSubject = {
-    id?: number;
-    teacher?: TTeacher;
-    subject?: TSubject;
-};
-
-type TTerm = {
-    id?: number;
-    year?: number;
-    semester?: string;
-    startDate?: string;
-    endDate?: string;
-    isActive?: boolean;
-};
-
-type TAdminClass = {
-    id?: number;
-    code?: string;
-    name?: string;
-    capacity?: number;
-};
-
-type TRoom = {
-    id?: number;
-    code?: string;
-    name?: string;
-};
-
-type TSchedule = {
-    id: number;
-    dayOfWeek?: number;
-    lessonStart?: number;
-    lessonEnd?: number;
-    startDate?: string;
-    endDate?: string;
-    isActive?: boolean;
-    roomId?: number;
-    room?: TRoom;
-};
-
-type TLesson = {
-    id: number;
-    date?: string;
-    dayOfWeek?: number;
-    lessonStart?: number;
-    lessonEnd?: number;
-    status?: string;
-    room?: TRoom;
-    schedule?: {
-        id?: number;
-    };
-};
-
-type TStudentUser = {
-    id?: string;
-    name?: string;
-    email?: string;
-};
-
-type TStudent = {
-    id?: number | string;
-    mssv?: string;
-    user?: TStudentUser;
-};
-
-type TCourseRegistration = {
-    id?: number | string;
-    status?: string;
-    studentId?: number | string;
-    courseOfferingId?: number;
-    student?: TStudent;
-    createdAt?: string;
-    updatedAt?: string;
-};
-
-type TStudentScore = {
-    id: string;
-    name: string;
-    mssv: string;
-    diemChuyenCan?: number | null;
-    diemKiemTra?: number | null;
-    diemThi?: number | null;
-};
-
-type TCourseOfferingDetail = {
-    id: number;
-    code?: string;
-    name?: string;
-    maxStudents?: number;
-    enrolledCount?: number;
-    isActive?: boolean;
-    status?: string;
-    createdAt?: string;
-    teacherSubject?: TTeacherSubject;
-    term?: TTerm;
-    adminClass?: TAdminClass;
-    schedules?: TSchedule[];
-    courseRegistrations?: TCourseRegistration[];
-};
 
 const DAY_MAP: Record<number, string> = {
     2: "Thứ 2",
@@ -178,39 +64,45 @@ const COURSE_STATUS_MAP: Record<string, { label: string; color: string }> = {
 
 const LESSON_STATUS_MAP: Record<string, { label: string; color: string }> = {
     UPCOMING: { label: "Sắp diễn ra", color: "blue" },
+    ONGOING: { label: "Đang học", color: "processing" },
     DONE: { label: "Đã học", color: "green" },
+    COMPLETED: { label: "Đã học", color: "green" },
     CANCELLED: { label: "Đã hủy", color: "red" },
 };
 
-const REGISTRATION_STATUS_MAP: Record<
-    string,
-    { label: string; color: string }
-> = {
-    REGISTERED: { label: "Đã đăng ký", color: "green" },
-    CANCELLED: { label: "Đã hủy", color: "red" },
-    PENDING: { label: "Chờ duyệt", color: "gold" },
-};
+const formatDate = (value?: string) =>
+    value ? dayjs(value).format("DD/MM/YYYY") : "—";
 
-const formatDate = (value?: string) => {
-    if (!value) return "—";
-    return dayjs(value).format("DD/MM/YYYY");
-};
+const formatDateTime = (value?: string) =>
+    value ? dayjs(value).format("DD/MM/YYYY HH:mm") : "—";
 
-const formatDateTime = (value?: string) => {
-    if (!value) return "—";
-    return dayjs(value).format("DD/MM/YYYY HH:mm");
+const getLessonRangeText = (start?: number, end?: number) => {
+    if (!start || !end) return "—";
+
+    const startTime = LESSON_TIME_MAP[start]?.start;
+    const endTime = LESSON_TIME_MAP[end]?.end;
+
+    if (!startTime || !endTime) return `Tiết ${start} - ${end}`;
+
+    return `${startTime} - ${endTime}`;
 };
 
 const renderSemesterTag = (semester?: string) => {
     if (!semester) return <Text>—</Text>;
+
     const config = SEMESTER_MAP[semester];
-    if (!config) return <Tag>{semester}</Tag>;
-    return <Tag color={config.color}>{config.label}</Tag>;
+
+    return (
+        <Tag color={config?.color || "default"}>
+            {config?.label || semester}
+        </Tag>
+    );
 };
 
 const renderCourseStatusTag = (status?: string, isActive?: boolean) => {
-    if (status && COURSE_STATUS_MAP[status]) {
-        const config = COURSE_STATUS_MAP[status];
+    const config = status ? COURSE_STATUS_MAP[status] : undefined;
+
+    if (config) {
         return <Tag color={config.color}>{config.label}</Tag>;
     }
 
@@ -223,16 +115,12 @@ const renderCourseStatusTag = (status?: string, isActive?: boolean) => {
 
 const renderLessonStatusTag = (status?: string) => {
     if (!status) return <Tag>—</Tag>;
-    const config = LESSON_STATUS_MAP[status];
-    if (!config) return <Tag>{status}</Tag>;
-    return <Tag color={config.color}>{config.label}</Tag>;
-};
 
-const renderRegistrationStatusTag = (status?: string) => {
-    if (!status) return <Tag>—</Tag>;
-    const config = REGISTRATION_STATUS_MAP[status];
-    if (!config) return <Tag>{status}</Tag>;
-    return <Tag color={config.color}>{config.label}</Tag>;
+    const config = LESSON_STATUS_MAP[status];
+
+    return (
+        <Tag color={config?.color || "default"}>{config?.label || status}</Tag>
+    );
 };
 
 const CourseOfferingDetailPage = () => {
@@ -242,10 +130,8 @@ const CourseOfferingDetailPage = () => {
 
     const [loading, setLoading] = useState(false);
     const [loadingLessons, setLoadingLessons] = useState(false);
-    const [dataDetail, setDataDetail] = useState<TCourseOfferingDetail | null>(
-        null,
-    );
-    const [lessons, setLessons] = useState<TLesson[]>([]);
+    const [dataDetail, setDataDetail] = useState<any>(null);
+    const [lessons, setLessons] = useState<any[]>([]);
 
     const [lessonPage, setLessonPage] = useState({
         current: 1,
@@ -264,13 +150,13 @@ const CourseOfferingDetailPage = () => {
 
         try {
             setLoading(true);
+
             const res = await getCourseOfferingDetailAPI(courseOfferingId);
             const detail =
                 res?.data?.data ?? res?.data?.result ?? res?.data ?? null;
 
             setDataDetail(detail);
         } catch (error: any) {
-            console.error(error);
             message.error(
                 error?.response?.data?.message ||
                     "Không thể tải chi tiết lớp học phần",
@@ -285,6 +171,7 @@ const CourseOfferingDetailPage = () => {
 
         try {
             setLoadingLessons(true);
+
             const res = await getLessonByCourseOfferingAPI(courseOfferingId);
             const lessonData =
                 res?.data?.data?.result ??
@@ -294,12 +181,8 @@ const CourseOfferingDetailPage = () => {
                 [];
 
             setLessons(Array.isArray(lessonData) ? lessonData : []);
-            setLessonPage((prev) => ({
-                ...prev,
-                current: 1,
-            }));
-        } catch (error: any) {
-            console.error(error);
+            setLessonPage((prev) => ({ ...prev, current: 1 }));
+        } catch {
             setLessons([]);
         } finally {
             setLoadingLessons(false);
@@ -315,71 +198,98 @@ const CourseOfferingDetailPage = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [courseOfferingId]);
 
-    const schedules = useMemo(
-        () => dataDetail?.schedules ?? [],
-        [dataDetail?.schedules],
-    );
+    const subject = dataDetail?.teacherSubject?.subject;
+    const teacher = dataDetail?.teacherSubject?.teacher;
+    const teacherUser = teacher?.user;
+    const term = dataDetail?.term;
+    const adminClass = dataDetail?.adminClass;
 
-    const students = useMemo<TStudentScore[]>(() => {
+    const schedules = useMemo(() => dataDetail?.schedules ?? [], [dataDetail]);
+
+    const students = useMemo(() => {
         const registrations = dataDetail?.courseRegistrations ?? [];
 
-        return registrations.map((item, index) => ({
+        return registrations.map((item: any, index: number) => ({
             id: String(item?.id ?? item?.student?.id ?? index + 1),
             name: item?.student?.user?.name ?? "—",
+            email: item?.student?.user?.email ?? "—",
             mssv: item?.student?.mssv ?? "—",
-            diemChuyenCan: null,
-            diemKiemTra: null,
-            diemThi: null,
+            status: item?.status,
+            createdAt: item?.createdAt,
         }));
-    }, [dataDetail?.courseRegistrations]);
+    }, [dataDetail]);
+
+    const doneLessons = lessons.filter((item) =>
+        ["DONE", "COMPLETED"].includes(item?.status),
+    ).length;
+
+    const lessonProgress = lessons.length
+        ? Math.round((doneLessons / lessons.length) * 100)
+        : 0;
+
+    const enrolledCount = students.length;
+    const maxStudents = dataDetail?.maxStudents || 0;
+    const enrolledPercent = maxStudents
+        ? Math.round((enrolledCount / maxStudents) * 100)
+        : 0;
 
     const scheduleColumns = [
         {
-            title: "STT",
-            width: 70,
-            align: "center" as const,
-            render: (_: any, __: TSchedule, index: number) => index + 1,
-        },
-        {
             title: "Thứ",
             dataIndex: "dayOfWeek",
-            key: "dayOfWeek",
-            render: (value: number) => DAY_MAP[value] || `Thứ ${value}`,
+            width: 120,
+            render: (value: number) => (
+                <Tag color="blue">{DAY_MAP[value] || `Thứ ${value}`}</Tag>
+            ),
         },
         {
             title: "Tiết học",
-            key: "period",
-            render: (_: any, record: TSchedule) =>
-                `${record.lessonStart ?? "—"} - ${record.lessonEnd ?? "—"}`,
+            render: (_: any, record: any) => (
+                <Space direction="vertical" size={0}>
+                    <Text strong>
+                        Tiết {record.lessonStart ?? "—"} -{" "}
+                        {record.lessonEnd ?? "—"}
+                    </Text>
+                    <Text type="secondary">
+                        {getLessonRangeText(
+                            record.lessonStart,
+                            record.lessonEnd,
+                        )}
+                    </Text>
+                </Space>
+            ),
         },
         {
-            title: "Phòng học",
-            key: "room",
-            render: (_: any, record: TSchedule) =>
-                record?.room?.code ||
-                record?.room?.name ||
-                (record?.roomId ? `Phòng #${record.roomId}` : "—"),
+            title: "Phòng",
+            render: (_: any, record: any) => (
+                <Space>
+                    <HomeOutlined />
+                    <Text strong>
+                        {record?.room?.code ||
+                            record?.room?.name ||
+                            `Phòng #${record.roomId || "—"}`}
+                    </Text>
+                </Space>
+            ),
         },
         {
-            title: "Từ ngày",
-            dataIndex: "startDate",
-            key: "startDate",
-            render: (value: string) => formatDate(value),
-        },
-        {
-            title: "Đến ngày",
-            dataIndex: "endDate",
-            key: "endDate",
-            render: (value: string) => formatDate(value),
+            title: "Thời gian áp dụng",
+            render: (_: any, record: any) => (
+                <Text type="secondary">
+                    {formatDate(record.startDate)} -{" "}
+                    {formatDate(record.endDate)}
+                </Text>
+            ),
         },
         {
             title: "Trạng thái",
             dataIndex: "isActive",
-            key: "isActive",
+            width: 130,
             render: (value: boolean) => (
-                <Tag color={value ? "green" : "default"}>
-                    {value ? "Đang áp dụng" : "Ngưng"}
-                </Tag>
+                <Badge
+                    status={value ? "success" : "default"}
+                    text={value ? "Đang áp dụng" : "Ngưng"}
+                />
             ),
         },
     ];
@@ -389,46 +299,49 @@ const CourseOfferingDetailPage = () => {
             title: "STT",
             width: 70,
             align: "center" as const,
-            render: (_text: any, _record: TLesson, index: number) => {
+            render: (_: any, __: any, index: number) => {
                 const { current, pageSize } = lessonPage;
-                return <Text>{(current - 1) * pageSize + index + 1}</Text>;
+                return (current - 1) * pageSize + index + 1;
             },
         },
         {
             title: "Ngày học",
             dataIndex: "date",
-            key: "date",
-            render: (value: string) => formatDate(value),
+            render: (value: string, record: any) => (
+                <Space direction="vertical" size={0}>
+                    <Text strong>{formatDate(value)}</Text>
+                    <Text type="secondary">
+                        {DAY_MAP[record?.dayOfWeek] || "—"}
+                    </Text>
+                </Space>
+            ),
         },
         {
-            title: "Thứ",
-            dataIndex: "dayOfWeek",
-            key: "dayOfWeek",
-            render: (value: number) => DAY_MAP[value] || `Thứ ${value}`,
+            title: "Thời gian",
+            render: (_: any, record: any) => (
+                <Space direction="vertical" size={0}>
+                    <Text>
+                        Tiết {record.lessonStart ?? "—"} -{" "}
+                        {record.lessonEnd ?? "—"}
+                    </Text>
+                    <Text type="secondary">
+                        {getLessonRangeText(
+                            record.lessonStart,
+                            record.lessonEnd,
+                        )}
+                    </Text>
+                </Space>
+            ),
         },
         {
-            title: "Tiết học",
-            key: "period",
-            render: (_: any, record: TLesson) =>
-                `${record.lessonStart ?? "—"} - ${record.lessonEnd ?? "—"}`,
-        },
-        {
-            title: "Phòng học",
-            key: "room",
-            render: (_: any, record: TLesson) =>
+            title: "Phòng",
+            render: (_: any, record: any) =>
                 record?.room?.code || record?.room?.name || "—",
-        },
-        {
-            title: "Lịch gốc",
-            key: "schedule",
-            render: (_: any, record: TLesson) =>
-                record?.schedule?.id ? `Schedule #${record.schedule.id}` : "—",
         },
         {
             title: "Trạng thái",
             dataIndex: "status",
-            key: "status",
-            render: (value: string) => renderLessonStatusTag(value),
+            render: renderLessonStatusTag,
         },
     ];
 
@@ -437,46 +350,44 @@ const CourseOfferingDetailPage = () => {
             title: "STT",
             width: 70,
             align: "center" as const,
-            render: (_: any, __: TStudentScore, index: number) => {
+            render: (_: any, __: any, index: number) => {
                 const { current, pageSize } = studentPage;
-                return <Text>{(current - 1) * pageSize + index + 1}</Text>;
+                return (current - 1) * pageSize + index + 1;
             },
         },
         {
-            title: "Họ tên",
-            dataIndex: "name",
-            key: "name",
-            render: (value: string) => value || "—",
+            title: "Sinh viên",
+            render: (_: any, record: any) => (
+                <Space>
+                    <Avatar icon={<UserOutlined />} />
+                    <Space direction="vertical" size={0}>
+                        <Text strong>{record.name}</Text>
+                        <Text type="secondary">{record.email}</Text>
+                    </Space>
+                </Space>
+            ),
         },
         {
             title: "MSSV",
             dataIndex: "mssv",
-            key: "mssv",
-            render: (value: string) => value || "—",
+            width: 140,
+            render: (value: string) => <Tag>{value}</Tag>,
         },
         {
-            title: "Điểm chuyên cần",
-            dataIndex: "diemChuyenCan",
-            key: "diemChuyenCan",
-            align: "center" as const,
-            render: (value?: number | null) =>
-                value !== null && value !== undefined ? value.toFixed(1) : "—",
+            title: "Ngày đăng ký",
+            dataIndex: "createdAt",
+            width: 160,
+            render: formatDateTime,
         },
         {
-            title: "Điểm KT",
-            dataIndex: "diemKiemTra",
-            key: "diemKiemTra",
-            align: "center" as const,
-            render: (value?: number | null) =>
-                value !== null && value !== undefined ? value.toFixed(1) : "—",
-        },
-        {
-            title: "Điểm thi",
-            dataIndex: "diemThi",
-            key: "diemThi",
-            align: "center" as const,
-            render: (value?: number | null) =>
-                value !== null && value !== undefined ? value.toFixed(1) : "—",
+            title: "Trạng thái",
+            dataIndex: "status",
+            width: 130,
+            render: (value: string) => (
+                <Tag color={value === "REGISTERED" ? "green" : "red"}>
+                    {value === "REGISTERED" ? "Đã đăng ký" : value || "—"}
+                </Tag>
+            ),
         },
     ];
 
@@ -484,10 +395,10 @@ const CourseOfferingDetailPage = () => {
         return (
             <div
                 style={{
-                    minHeight: 300,
+                    minHeight: 360,
                     display: "flex",
-                    alignItems: "center",
                     justifyContent: "center",
+                    alignItems: "center",
                 }}
             >
                 <Spin size="large" />
@@ -499,48 +410,68 @@ const CourseOfferingDetailPage = () => {
         return (
             <Card>
                 <Empty description="Không tìm thấy lớp học phần" />
-                <div style={{ marginTop: 16 }}>
-                    <Button
-                        icon={<ArrowLeftOutlined />}
-                        onClick={() => navigate(-1)}
-                    >
-                        Quay lại
-                    </Button>
-                </div>
+                <Button
+                    icon={<ArrowLeftOutlined />}
+                    style={{ marginTop: 16 }}
+                    onClick={() => navigate(-1)}
+                >
+                    Quay lại
+                </Button>
             </Card>
         );
     }
 
     return (
-        <Space direction="vertical" size={16} style={{ width: "100%" }}>
-            <Card>
-                <Row justify="space-between" align="middle" gutter={[16, 16]}>
-                    <Col xs={24} md={16}>
-                        <Space direction="vertical" size={4}>
-                            <Title level={3} style={{ margin: 0 }}>
-                                {dataDetail?.code || "Lớp học phần"}{" "}
-                                {dataDetail?.name ? `- ${dataDetail.name}` : ""}
-                            </Title>
+        <Space direction="vertical" size={18} style={{ width: "100%" }}>
+            <Card
+                style={{
+                    borderRadius: 20,
+                    overflow: "hidden",
+                    background:
+                        "linear-gradient(135deg, #eff6ff 0%, #ffffff 45%, #f8fafc 100%)",
+                }}
+                bodyStyle={{ padding: 24 }}
+            >
+                <Row gutter={[16, 16]} align="middle" justify="space-between">
+                    <Col xs={24} lg={16}>
+                        <Space size={16} align="start">
+                            <Avatar
+                                size={64}
+                                icon={<ReadOutlined />}
+                                style={{
+                                    background: "#1677ff",
+                                    boxShadow:
+                                        "0 12px 28px rgba(22,119,255,0.25)",
+                                }}
+                            />
 
-                            <Space wrap>
-                                {renderCourseStatusTag(
-                                    dataDetail?.status,
-                                    dataDetail?.isActive,
-                                )}
-                                {dataDetail?.term?.semester &&
-                                    renderSemesterTag(
-                                        dataDetail?.term?.semester,
+                            <Space direction="vertical" size={6}>
+                                <Space wrap>
+                                    {renderCourseStatusTag(
+                                        dataDetail?.status,
+                                        dataDetail?.isActive,
                                     )}
-                            </Space>
+                                    {renderSemesterTag(term?.semester)}
+                                </Space>
 
-                            <Text type="secondary">
-                                Tạo lúc: {formatDateTime(dataDetail?.createdAt)}
-                            </Text>
+                                <Title level={3} style={{ margin: 0 }}>
+                                    {dataDetail?.code || "Lớp học phần"}
+                                </Title>
+
+                                <Text style={{ fontSize: 16 }}>
+                                    {subject?.name || "—"}
+                                </Text>
+
+                                <Text type="secondary">
+                                    Tạo lúc:{" "}
+                                    {formatDateTime(dataDetail?.createdAt)}
+                                </Text>
+                            </Space>
                         </Space>
                     </Col>
 
-                    <Col xs={24} md={8}>
-                        <Row justify="end" gutter={[8, 8]}>
+                    <Col xs={24} lg={8}>
+                        <Row gutter={[8, 8]} justify="end">
                             <Col>
                                 <Button
                                     icon={<ArrowLeftOutlined />}
@@ -553,8 +484,8 @@ const CourseOfferingDetailPage = () => {
                                 <Button
                                     type="primary"
                                     icon={<ReloadOutlined />}
-                                    onClick={fetchData}
                                     loading={loading || loadingLessons}
+                                    onClick={fetchData}
                                 >
                                     Làm mới
                                 </Button>
@@ -565,159 +496,166 @@ const CourseOfferingDetailPage = () => {
             </Card>
 
             <Row gutter={[16, 16]}>
-                <Col xs={24} lg={14}>
-                    <Card title="Thông tin chung">
+                <Col xs={24} md={8}>
+                    <Card bordered={false} style={{ borderRadius: 18 }}>
+                        <Statistic
+                            title="Sinh viên đăng ký"
+                            value={enrolledCount}
+                            suffix={`/ ${maxStudents || "—"}`}
+                            prefix={<TeamOutlined />}
+                        />
+                        <Progress
+                            percent={enrolledPercent}
+                            size="small"
+                            style={{ marginTop: 12 }}
+                        />
+                    </Card>
+                </Col>
+
+                <Col xs={24} md={8}>
+                    <Card bordered={false} style={{ borderRadius: 18 }}>
+                        <Statistic
+                            title="Tổng buổi học"
+                            value={lessons.length}
+                            prefix={<CalendarOutlined />}
+                        />
+                        <Text type="secondary">
+                            Đã học {doneLessons}/{lessons.length} buổi
+                        </Text>
+                    </Card>
+                </Col>
+
+                <Col xs={24} md={8}>
+                    <Card bordered={false} style={{ borderRadius: 18 }}>
+                        <Statistic
+                            title="Tiến độ môn học"
+                            value={lessonProgress}
+                            suffix="%"
+                            prefix={<ClockCircleOutlined />}
+                        />
+                        <Progress
+                            percent={lessonProgress}
+                            size="small"
+                            status={
+                                lessonProgress >= 100 ? "success" : "active"
+                            }
+                            style={{ marginTop: 12 }}
+                        />
+                    </Card>
+                </Col>
+            </Row>
+
+            <Row gutter={[16, 16]}>
+                <Col xs={24} lg={15}>
+                    <Card
+                        title={
+                            <Space>
+                                <BookOutlined />
+                                <span>Thông tin lớp học phần</span>
+                            </Space>
+                        }
+                        style={{ borderRadius: 18 }}
+                    >
                         <Descriptions column={1} bordered size="middle">
-                            <Descriptions.Item
-                                label={
-                                    <Space>
-                                        <ReadOutlined />
-                                        <span>Mã lớp học phần</span>
-                                    </Space>
-                                }
-                            >
-                                {dataDetail?.code || "—"}
+                            <Descriptions.Item label="Mã lớp học phần">
+                                <Text strong>{dataDetail?.code || "—"}</Text>
                             </Descriptions.Item>
 
-                            <Descriptions.Item
-                                label={
-                                    <Space>
-                                        <BookOutlined />
-                                        <span>Môn học</span>
-                                    </Space>
-                                }
-                            >
+                            <Descriptions.Item label="Môn học">
                                 <Space direction="vertical" size={0}>
-                                    <Text strong>
-                                        {dataDetail?.teacherSubject?.subject
-                                            ?.name || "—"}
-                                    </Text>
+                                    <Text strong>{subject?.name || "—"}</Text>
                                     <Text type="secondary">
-                                        {dataDetail?.teacherSubject?.subject
-                                            ?.code || "—"}
+                                        {subject?.code || "—"} •{" "}
+                                        {subject?.credit ?? "—"} tín chỉ
                                     </Text>
                                 </Space>
                             </Descriptions.Item>
 
-                            <Descriptions.Item
-                                label={
-                                    <Space>
-                                        <BookOutlined />
-                                        <span>Số tín chỉ</span>
-                                    </Space>
-                                }
-                            >
-                                {dataDetail?.teacherSubject?.subject?.credit ??
-                                    "—"}
-                            </Descriptions.Item>
-
-                            <Descriptions.Item
-                                label={
-                                    <Space>
-                                        <CalendarOutlined />
-                                        <span>Kỳ học</span>
-                                    </Space>
-                                }
-                            >
+                            <Descriptions.Item label="Học kỳ">
                                 <Space direction="vertical" size={0}>
-                                    <span>
-                                        {renderSemesterTag(
-                                            dataDetail?.term?.semester,
-                                        )}{" "}
-                                        {dataDetail?.term?.year
-                                            ? `- Năm ${dataDetail.term.year}`
-                                            : ""}
-                                    </span>
+                                    <Space>
+                                        {renderSemesterTag(term?.semester)}
+                                        <Text>
+                                            {term?.year
+                                                ? `Năm ${term.year}`
+                                                : ""}
+                                        </Text>
+                                    </Space>
                                     <Text type="secondary">
-                                        {formatDate(
-                                            dataDetail?.term?.startDate,
-                                        )}{" "}
-                                        -{" "}
-                                        {formatDate(dataDetail?.term?.endDate)}
+                                        {formatDate(term?.startDate)} -{" "}
+                                        {formatDate(term?.endDate)}
                                     </Text>
                                 </Space>
                             </Descriptions.Item>
 
-                            <Descriptions.Item
-                                label={
-                                    <Space>
-                                        <TeamOutlined />
-                                        <span>Lớp hành chính</span>
-                                    </Space>
-                                }
-                            >
-                                {dataDetail?.adminClass ? (
+                            <Descriptions.Item label="Lớp hành chính">
+                                {adminClass ? (
                                     <Space direction="vertical" size={0}>
                                         <Text strong>
-                                            {dataDetail?.adminClass?.code ||
-                                                "—"}
+                                            {adminClass?.code || "—"}
                                         </Text>
                                         <Text type="secondary">
-                                            {dataDetail?.adminClass?.name ||
-                                                "—"}
+                                            {adminClass?.name || "—"}
                                         </Text>
                                     </Space>
                                 ) : (
-                                    "—"
+                                    "Không có lớp hành chính"
                                 )}
-                            </Descriptions.Item>
-
-                            <Descriptions.Item
-                                label={
-                                    <Space>
-                                        <TeamOutlined />
-                                        <span>Sĩ số</span>
-                                    </Space>
-                                }
-                            >
-                                {students.length}/
-                                {dataDetail?.maxStudents ?? "—"}
                             </Descriptions.Item>
                         </Descriptions>
                     </Card>
                 </Col>
 
-                <Col xs={24} lg={10}>
-                    <Card title="Giảng viên phụ trách">
-                        <Descriptions column={1} bordered size="middle">
-                            <Descriptions.Item
-                                label={
-                                    <Space>
-                                        <UserOutlined />
-                                        <span>Họ và tên</span>
-                                    </Space>
-                                }
-                            >
-                                {dataDetail?.teacherSubject?.teacher?.user
-                                    ?.name || "—"}
-                            </Descriptions.Item>
+                <Col xs={24} lg={9}>
+                    <Card
+                        title={
+                            <Space>
+                                <UserOutlined />
+                                <span>Giảng viên phụ trách</span>
+                            </Space>
+                        }
+                        style={{ borderRadius: 18 }}
+                    >
+                        <Space
+                            direction="vertical"
+                            align="center"
+                            style={{ width: "100%", marginBottom: 16 }}
+                        >
+                            <Avatar size={72} icon={<UserOutlined />} />
+                            <Title level={5} style={{ margin: 0 }}>
+                                {teacherUser?.name || "—"}
+                            </Title>
+                            <Text type="secondary">
+                                {teacherUser?.email || "—"}
+                            </Text>
+                        </Space>
 
-                            <Descriptions.Item label="Email">
-                                {dataDetail?.teacherSubject?.teacher?.user
-                                    ?.email || "—"}
+                        <Descriptions column={1} bordered size="small">
+                            <Descriptions.Item label="Mã GV">
+                                {teacher?.msgv || "—"}
                             </Descriptions.Item>
-
-                            <Descriptions.Item label="Mã giảng viên">
-                                {dataDetail?.teacherSubject?.teacher?.msgv ||
-                                    "—"}
-                            </Descriptions.Item>
-
                             <Descriptions.Item label="Học vị">
-                                {dataDetail?.teacherSubject?.teacher?.degree ||
-                                    "—"}
+                                {teacher?.degree || "—"}
                             </Descriptions.Item>
-
                             <Descriptions.Item label="Chuyên môn">
-                                {dataDetail?.teacherSubject?.teacher
-                                    ?.specialization || "—"}
+                                {teacher?.specialization || "—"}
                             </Descriptions.Item>
                         </Descriptions>
                     </Card>
                 </Col>
             </Row>
 
-            <Card title={`Danh sách lịch học (${schedules.length})`}>
-                <Table<TSchedule>
+            <Card
+                title={
+                    <Space>
+                        <CalendarOutlined />
+                        <span>Lịch học cố định</span>
+                        <Tag>{schedules.length}</Tag>
+                    </Space>
+                }
+                style={{ borderRadius: 18 }}
+            >
+                <Table
                     rowKey="id"
                     columns={scheduleColumns}
                     dataSource={schedules}
@@ -727,8 +665,17 @@ const CourseOfferingDetailPage = () => {
                 />
             </Card>
 
-            <Card title={`Danh sách buổi học (${lessons.length})`}>
-                <Table<TLesson>
+            <Card
+                title={
+                    <Space>
+                        <ClockCircleOutlined />
+                        <span>Danh sách buổi học</span>
+                        <Tag>{lessons.length}</Tag>
+                    </Space>
+                }
+                style={{ borderRadius: 18 }}
+            >
+                <Table
                     rowKey="id"
                     columns={lessonColumns}
                     dataSource={lessons}
@@ -737,24 +684,27 @@ const CourseOfferingDetailPage = () => {
                         current: lessonPage.current,
                         pageSize: lessonPage.pageSize,
                         showSizeChanger: false,
-                        onChange: (page, pageSize) => {
-                            setLessonPage({
-                                current: page,
-                                pageSize,
-                            });
-                        },
+                        onChange: (page, pageSize) =>
+                            setLessonPage({ current: page, pageSize }),
                         showTotal: (total, range) =>
                             `${range[0]}-${range[1]} trên ${total} buổi học`,
                     }}
-                    locale={{ emptyText: "Chưa có lesson" }}
-                    scroll={{ x: 1000 }}
+                    locale={{ emptyText: "Chưa có buổi học" }}
+                    scroll={{ x: 900 }}
                 />
             </Card>
 
             <Card
-                title={`Danh sách sinh viên đăng ký môn (${students.length})`}
+                title={
+                    <Space>
+                        <TeamOutlined />
+                        <span>Danh sách sinh viên</span>
+                        <Tag>{students.length}</Tag>
+                    </Space>
+                }
+                style={{ borderRadius: 18 }}
             >
-                <Table<TStudentScore>
+                <Table
                     rowKey="id"
                     columns={studentColumns}
                     dataSource={students}
@@ -762,12 +712,8 @@ const CourseOfferingDetailPage = () => {
                         current: studentPage.current,
                         pageSize: studentPage.pageSize,
                         showSizeChanger: false,
-                        onChange: (page, pageSize) => {
-                            setStudentPage({
-                                current: page,
-                                pageSize,
-                            });
-                        },
+                        onChange: (page, pageSize) =>
+                            setStudentPage({ current: page, pageSize }),
                         showTotal: (total, range) =>
                             `${range[0]}-${range[1]} trên ${total} sinh viên`,
                     }}

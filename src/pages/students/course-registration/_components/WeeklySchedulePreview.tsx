@@ -52,7 +52,17 @@ const getCourseBlocks = (
 ): CourseBlock[] => {
     const blocks: CourseBlock[] = [];
 
-    registeredCourses.forEach((item) => {
+    const selectedTermId = selectedCourses[0]?.term?.id;
+
+    const filteredRegisteredCourses = selectedTermId
+        ? registeredCourses.filter(
+              (item) => item?.courseOffering?.term?.id === selectedTermId,
+          )
+        : registeredCourses.filter(
+              (item) => item?.courseOffering?.term?.isActive === true,
+          );
+
+    filteredRegisteredCourses.forEach((item) => {
         const courseOffering = item?.courseOffering;
 
         const subjectName =
@@ -79,7 +89,7 @@ const getCourseBlocks = (
     selectedCourses.forEach((course) => {
         const subjectId = course?.subject?.id;
 
-        const existedInRegistered = registeredCourses.some(
+        const existedInRegistered = filteredRegisteredCourses.some(
             (item) =>
                 item?.courseOffering?.teacherSubject?.subject?.id === subjectId,
         );
@@ -125,7 +135,7 @@ const WeeklySchedulePreview = ({
     registeredCourses,
 }: Props) => {
     const blocks = getCourseBlocks(selectedCourses, registeredCourses);
-
+    console.log(blocks);
     return (
         <Card
             title="Thời khóa biểu dự kiến"

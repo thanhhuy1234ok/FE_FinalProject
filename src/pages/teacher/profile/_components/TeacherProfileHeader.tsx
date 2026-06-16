@@ -23,7 +23,7 @@ const TeacherProfileHeader = ({ teacher }: any) => {
                     </Title>
 
                     <Text type="secondary">
-                        Mã giáo viên: {teacher?.code || teacher?.id}
+                        Mã giáo viên: {teacher?.msgv || teacher?.id}
                     </Text>
 
                     <div style={{ marginTop: 8 }}>
@@ -33,7 +33,9 @@ const TeacherProfileHeader = ({ teacher }: any) => {
                     <div style={{ marginTop: 8 }}>
                         <Tag color="blue">Giáo viên</Tag>
                         {teacher?.department && (
-                            <Tag color="processing">{teacher.department}</Tag>
+                            <Tag color="processing">
+                                {teacher.department.name}
+                            </Tag>
                         )}
                     </div>
                 </Col>

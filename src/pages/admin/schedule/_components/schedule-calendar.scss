@@ -109,7 +109,7 @@
     }
 
     &__cell {
-        min-height: 112px;
+        min-height: 122px;
         padding: 8px;
         border-radius: 14px;
         border: 1px solid transparent;
@@ -174,6 +174,12 @@
         background: #ffffff;
         border: 1px solid #eef2f6;
         cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+        }
     }
 
     &__event-bar {
@@ -202,6 +208,17 @@
         font-size: 11px;
         color: #8c8c8c;
         line-height: 1.35;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &__time {
+        margin-top: 3px;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.2;
+        color: #1677ff;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -279,6 +296,12 @@
         border: 1px solid #eef2f6;
         background: #fff;
         cursor: pointer;
+        transition: all 0.25s ease;
+
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        }
     }
 
     &__bar {
@@ -308,12 +331,20 @@
 
     &__time {
         font-size: 13px;
-        font-weight: 600;
+        font-weight: 700;
         color: #1677ff;
         background: rgba(22, 119, 255, 0.08);
         border: 1px solid rgba(22, 119, 255, 0.15);
         border-radius: 999px;
-        padding: 4px 10px;
+        padding: 5px 12px;
+        white-space: nowrap;
+    }
+
+    &__lesson {
+        margin-top: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #64748b;
     }
 
     &__meta {

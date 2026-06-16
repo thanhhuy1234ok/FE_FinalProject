@@ -138,7 +138,9 @@ const StudentHeader = () => {
     }, []);
 
     const getNotificationLink = (item: INotification) => {
-        switch (item.type) {
+        const type = String(item.type || "").toUpperCase();
+
+        switch (type) {
             case "DOCUMENT":
             case "COURSE":
                 return item.referenceId
@@ -154,6 +156,10 @@ const StudentHeader = () => {
 
             case "PAYMENT":
                 return "/payment/history";
+
+            case "GRADE":
+            case "GRADE_PUBLISHED":
+                return "/grades";
 
             default:
                 return null;
