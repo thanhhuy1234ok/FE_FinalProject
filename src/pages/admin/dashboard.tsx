@@ -202,7 +202,7 @@ const Dashboard = () => {
                         <Card bordered={false} style={{ borderRadius: 18 }}>
                             <Statistic
                                 title="Người dùng"
-                                value={userStats?.totalUsers || 0}
+                                value={Number(userStats?.totalUsers) - 1 || 0}
                                 formatter={formatter}
                                 prefix={
                                     <Avatar

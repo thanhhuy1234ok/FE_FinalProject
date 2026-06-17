@@ -93,12 +93,12 @@ const useUserHooks = () => {
         void fetchDepartments();
     }, []);
 
-    const roleOptions: IOptionSelect[] = useMemo(() => {
-        return roles.map((item) => ({
-            label: item.name,
-            value: item.id,
+    const roleOptions = roles
+        ?.filter((role: any) => role.name !== "ADMIN")
+        .map((role: any) => ({
+            label: role.name,
+            value: role.id,
         }));
-    }, [roles]);
 
     const majorOptions: IOptionSelect[] = useMemo(() => {
         return majors.map((item: any) => ({
