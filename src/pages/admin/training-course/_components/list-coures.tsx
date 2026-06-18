@@ -74,7 +74,7 @@ const ListCourse = () => {
             setLoadingCurriculumSubjects(true);
 
             const res = await getCurriculumSubjectAPI(
-                "current=1&pageSize=1000",
+                "current=1&pageSize=10000",
             );
 
             setDataCurriculumSubjects(res?.data?.result ?? []);
