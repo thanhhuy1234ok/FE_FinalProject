@@ -23,6 +23,7 @@ import {
 } from "@ant-design/icons";
 import ProCard from "@ant-design/pro-card";
 import { getMajorDetailAPI } from "@/services/api";
+import { CurriculumStatus } from "@/types/status";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -56,7 +57,7 @@ interface IAdminClass {
 interface ICurriculum {
     id: number;
     name: string;
-    status?: string;
+    status: string;
     total_credits_required?: number;
     yearOfAdmission?: {
         id: number;
@@ -87,16 +88,19 @@ const renderStatusTag = (isActive?: boolean) => {
     );
 };
 
-const renderCurriculumStatus = (status?: string) => {
+const renderCurriculumStatus = (status: any) => {
     switch (status) {
-        case "ACTIVE":
+        case CurriculumStatus.ACTIVE:
             return <Tag color="success">Đang áp dụng</Tag>;
-        case "DRAFT":
-            return <Tag color="processing">Nháp</Tag>;
-        case "ARCHIVED":
-            return <Tag color="default">Lưu trữ</Tag>;
+
+        case CurriculumStatus.DRAFT:
+            return <Tag color="processing">Bản nháp</Tag>;
+
+        case CurriculumStatus.ARCHIVED:
+            return <Tag color="default">Đã lưu trữ</Tag>;
+
         default:
-            return <Tag>{status || "Không xác định"}</Tag>;
+            return <Tag>Không xác định</Tag>;
     }
 };
 

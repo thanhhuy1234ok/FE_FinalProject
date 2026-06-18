@@ -17,3 +17,9 @@ export enum TPaymentMethod {
     VNPAY = "VNPAY",
     TECHCOMBANK = "TECHCOMBANK",
 }
+
+export enum CurriculumStatus {
+    DRAFT = "draft",
+    ACTIVE = "active",
+    ARCHIVED = "archived",
+}
