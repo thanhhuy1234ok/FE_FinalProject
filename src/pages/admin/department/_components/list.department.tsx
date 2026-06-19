@@ -12,118 +12,138 @@ import ModalDepartment from "./modal/modal-department";
 
 const ListDepartment = () => {
     const { tableRef } = departmentHook();
-    const [openModalImport, setOpenModalImport] = useState(false);
-    const [openModal, setOpenModal] = useState<boolean>(false);
+    const [openModal, setOpenModal] = useState(false);
+
     const [meta, setMeta] = useState({
         current: 1,
-        pageSize: 5,
+        pageSize: 10,
         pages: 0,
         total: 0,
     });
+
     const navigate = useNavigate();
-    const handleExportData = () => {
-        window.alert("me");
-    };
+
     const reloadTable = () => {
         tableRef.current?.reload();
     };
+
     const columns: ProColumns<IDepartment>[] = [
         {
             title: "STT",
             dataIndex: "id",
             width: 70,
+            search: false,
             render: (_, __, index) =>
                 (meta.current - 1) * meta.pageSize + index + 1,
-            search: false,
         },
         {
             key: "name",
-            title: "name",
+            title: "Tên bộ môn",
             dataIndex: "name",
+            valueType: "text",
+            fieldProps: {
+                placeholder: "Nhập tên bộ môn",
+            },
         },
         {
             key: "code",
+            title: "Mã bộ môn",
             dataIndex: "code",
-            title: "code",
         },
         {
-            title: "CreatedAt",
+            title: "Ngày tạo",
             dataIndex: "createdAt",
             width: 200,
             sorter: true,
-            render: (_text, record) => {
-                return (
-                    <>{dayjs(record.createdAt).format("DD-MM-YYYY HH:mm:ss")}</>
-                );
-            },
             hideInSearch: true,
+            render: (_, record) =>
+                dayjs(record.createdAt).format("DD-MM-YYYY HH:mm:ss"),
         },
         {
-            title: "Detail",
+            title: "Thao tác",
             hideInSearch: true,
             align: "center",
-            render: (_value, entity) => {
-                return (
-                    <>
-                        <ButtonComponents
-                            title="Xem chi tiết bộ môn"
-                            key={entity.id}
-                            onClick={() => navigate(`${entity.id}`)}
-                        />
-                    </>
-                );
-            },
+            width: 180,
+            render: (_, entity) => (
+                <ButtonComponents
+                    title="Xem chi tiết"
+                    onClick={() =>
+                        navigate(`/manage-curriculum/department/${entity.id}`)
+                    }
+                />
+            ),
         },
     ];
+
     return (
         <>
             <DataTable<IDepartment>
                 actionRef={tableRef}
-                headerTitle="Danh sách Bộ môn"
+                headerTitle="Danh sách bộ môn"
                 rowKey="id"
                 columns={columns}
                 scroll={{ x: true }}
                 options={false}
                 pagination={{
-                    current: meta.current,
                     pageSize: meta.pageSize,
                     showSizeChanger: true,
                     total: meta.total,
                     showTotal: (total, range) => (
                         <div>
-                            {range[0]}-{range[1]} trên {total} rows
+                            {range[0]}-{range[1]} trên {total} bộ môn
                         </div>
                     ),
                 }}
                 request={async (params, sort, filter) => {
-                    // ✅ build query = params + sort + filter
-                    const qs = buildQuery(params, sort, filter);
+                    const current = Number(params.current ?? 1);
+                    const pageSize = Number(params.pageSize ?? 10);
+
+                    const qs = buildQuery(
+                        {
+                            ...params,
+                            current,
+                            pageSize,
+                        },
+                        sort,
+                        filter,
+                    );
+
                     const res = await getDepartmentsAPI(qs);
 
                     const result: IDepartment[] = res?.data?.result ?? [];
+
                     const nextMeta = res?.data?.meta ?? {
-                        current: params.current ?? 1,
-                        pageSize: params.pageSize ?? 10,
+                        current,
+                        pageSize,
                         pages: 0,
                         total: result.length,
                     };
 
-                    setMeta(nextMeta);
+                    setMeta({
+                        current: Number(nextMeta.current ?? current),
+                        pageSize: Number(nextMeta.pageSize ?? pageSize),
+                        pages: Number(nextMeta.pages ?? 0),
+                        total: Number(nextMeta.total ?? result.length),
+                    });
 
                     return {
                         data: result,
                         success: true,
-                        total: nextMeta.total ?? result.length,
+                        total: Number(nextMeta.total ?? result.length),
                     };
                 }}
                 search={{
                     layout: "vertical",
                     defaultCollapsed: false,
-                    span: 6, // giảm độ rộng mỗi field để đỡ loãng
-                    labelWidth: 55, // label gọn
+                    span: 6,
+                    labelWidth: 80,
                 }}
                 toolBarRender={() => [
-                    <RenderHeaderTable showAdd setOpenModal={setOpenModal} />,
+                    <RenderHeaderTable
+                        key="add"
+                        showAdd
+                        setOpenModal={setOpenModal}
+                    />,
                 ]}
             />
 

@@ -38,10 +38,12 @@ const SubjectList = () => {
         {
             title: "Số tín chỉ",
             dataIndex: "credit",
+            search: false,
         },
         {
             title: "Bộ môn",
             dataIndex: ["department", "name"],
+            search: false,
         },
     ];
 

@@ -50,6 +50,7 @@ interface IStudent {
     id: string;
     name: string;
     email?: string;
+    mssv: string;
 }
 
 interface IAdvisor {
@@ -453,7 +454,9 @@ const AdminClassDetail = () => {
                                         </Col>
 
                                         <Col>
-                                            <Tag>{student.id}</Tag>
+                                            <Tag color="blue">
+                                                MSSV: {student.mssv}
+                                            </Tag>
                                         </Col>
                                     </Row>
                                 </Card>

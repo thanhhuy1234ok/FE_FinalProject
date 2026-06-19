@@ -85,7 +85,7 @@ export const buildQuery = (
     const {
         searchFields = [],
         sortPriority = [],
-        defaultSort = "createdAt",
+        defaultSort = "id",
         sortKey = "sort",
         normalize,
         filterSerializer = defaultFilterSerializer,

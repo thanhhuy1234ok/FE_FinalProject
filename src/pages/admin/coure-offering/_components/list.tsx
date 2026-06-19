@@ -263,7 +263,7 @@ const ListCourseOffering = () => {
                 dataIndex: "subject",
                 width: isMobile ? 180 : 260,
                 ellipsis: true,
-                hideInSearch: true,
+                // hideInSearch: true,
                 render: (_, record) => {
                     const code = record.teacherSubject?.subject?.code || "-";
                     const name = record.teacherSubject?.subject?.name || "-";
@@ -298,7 +298,7 @@ const ListCourseOffering = () => {
                 dataIndex: "teacher",
                 width: isMobile ? 120 : 170,
                 ellipsis: true,
-                hideInSearch: true,
+                // hideInSearch: true,
                 render: (_, record) => (
                     <Text ellipsis>
                         {record.teacherSubject?.teacher?.user?.name || "-"}
@@ -406,6 +406,7 @@ const ListCourseOffering = () => {
 
                     return <Badge status={config.status} text={config.text} />;
                 },
+                search: false,
             },
             {
                 title: "Ngày tạo",

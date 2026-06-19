@@ -84,7 +84,7 @@ const TableCampusBuildingRoom = () => {
         <div className="user-page">
             <DataTable<ICampus>
                 actionRef={tableRef}
-                headerTitle="Danh sách Campus"
+                headerTitle="Danh sách cơ sở"
                 rowKey="id"
                 columns={columns}
                 request={async (params, sort, filter) => {

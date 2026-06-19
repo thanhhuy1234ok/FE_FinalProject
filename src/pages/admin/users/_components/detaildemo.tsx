@@ -8,7 +8,6 @@ import {
     Descriptions,
     Divider,
     Empty,
-    Popconfirm,
     Progress,
     Result,
     Row,
@@ -28,10 +27,6 @@ import {
     BookOutlined,
     CheckCircleOutlined,
     ClockCircleOutlined,
-    DeleteOutlined,
-    EditOutlined,
-    LockOutlined,
-    UnlockOutlined,
     UserOutlined,
 } from "@ant-design/icons";
 import { ProCard } from "@ant-design/pro-components";
@@ -98,6 +93,14 @@ interface IUserDetail {
     student?: IStudent | null;
 }
 
+interface ITeacherSubject {
+    id: number;
+    subjectId: number;
+    subjectName: string;
+    subjectCode: string;
+    credit: number;
+}
+
 interface ITeachingCourse {
     id: number;
     code: string;
@@ -134,10 +137,15 @@ interface IStudentLearningOverview {
     grades: IStudentGrade[];
 }
 
+interface ITeacherTeachingOverview {
+    teacherSubjects: ITeacherSubject[];
+    courses: ITeachingCourse[];
+}
+
 function formatGender(g?: string | null) {
     if (!g) return "N/A";
-    if (g === "male") return "Nam";
-    if (g === "female") return "Nữ";
+    if (g === "MALE") return "Nam";
+    if (g === "FEMALE") return "Nữ";
     return "Khác";
 }
 
@@ -149,24 +157,21 @@ function roleTag(role?: string) {
     return <Tag>{role}</Tag>;
 }
 
-async function toggleActiveUser(_id: string | number, _toActive: boolean) {
-    await new Promise((r) => setTimeout(r, 300));
-}
-
-async function deleteUser(_id: string | number) {
-    await new Promise((r) => setTimeout(r, 300));
-}
-
 const UserDetailPageDemo = () => {
     const { id } = useParams();
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(true);
-    const [actionLoading, setActionLoading] = useState(false);
     const [data, setData] = useState<IUserDetail | null>(null);
+
+    const [teacherSubjects, setTeacherSubjects] = useState<ITeacherSubject[]>(
+        [],
+    );
+
     const [teachingCourses, setTeachingCourses] = useState<ITeachingCourse[]>(
         [],
     );
+
     const [learningOverview, setLearningOverview] =
         useState<IStudentLearningOverview | null>(null);
 
@@ -184,6 +189,10 @@ const UserDetailPageDemo = () => {
             try {
                 setLoading(true);
 
+                setTeacherSubjects([]);
+                setTeachingCourses([]);
+                setLearningOverview(null);
+
                 const res = await getDetailUserAPI(id);
 
                 if (!res?.data) {
@@ -197,13 +206,19 @@ const UserDetailPageDemo = () => {
                     const teachingRes = await getTeacherTeachingOverviewAPI(
                         user.id,
                     );
-                    setTeachingCourses(teachingRes?.data || []);
+
+                    const overview =
+                        teachingRes?.data as ITeacherTeachingOverview;
+
+                    setTeacherSubjects(overview?.teacherSubjects || []);
+                    setTeachingCourses(overview?.courses || []);
                 }
 
                 if (user.role?.name === "STUDENT") {
                     const learningRes = await getStudentLearningOverviewAPI(
                         user.id,
                     );
+
                     setLearningOverview(learningRes?.data || null);
                 }
             } catch (error) {
@@ -217,45 +232,53 @@ const UserDetailPageDemo = () => {
         init();
     }, [id]);
 
-    const onToggleActive = async () => {
-        if (!data) return;
+    const renderTeacherSubjectsCard = () => {
+        return (
+            <ProCard title="Môn giảng dạy được phân công" bordered>
+                {teacherSubjects.length ? (
+                    <Row gutter={[12, 12]}>
+                        {teacherSubjects.map((item) => (
+                            <Col xs={24} sm={12} md={8} lg={6} key={item.id}>
+                                <Card
+                                    size="small"
+                                    bordered
+                                    style={{
+                                        height: "100%",
+                                        borderRadius: 12,
+                                    }}
+                                    bodyStyle={{
+                                        height: "100%",
+                                    }}
+                                >
+                                    <Space
+                                        direction="vertical"
+                                        size={6}
+                                        style={{ width: "100%" }}
+                                    >
+                                        <Text strong ellipsis>
+                                            {item.subjectName || "N/A"}
+                                        </Text>
 
-        try {
-            setActionLoading(true);
-            await toggleActiveUser(data.id, !data.isActive);
+                                        <Text type="secondary">
+                                            Mã môn: {item.subjectCode || "N/A"}
+                                        </Text>
 
-            setData((prev) =>
-                prev
-                    ? {
-                          ...prev,
-                          isActive: !prev.isActive,
-                      }
-                    : prev,
-            );
-
-            message.success(
-                data.isActive ? "Đã khoá tài khoản" : "Đã mở khoá tài khoản",
-            );
-        } catch (error) {
-            message.error("Thao tác thất bại");
-        } finally {
-            setActionLoading(false);
-        }
-    };
-
-    const onDelete = async () => {
-        if (!data) return;
-
-        try {
-            setActionLoading(true);
-            await deleteUser(data.id);
-            message.success("Đã xoá người dùng");
-            navigate(-1);
-        } catch (error) {
-            message.error("Xoá thất bại");
-        } finally {
-            setActionLoading(false);
-        }
+                                        <Tag color="blue">
+                                            {item.credit || 0} tín chỉ
+                                        </Tag>
+                                    </Space>
+                                </Card>
+                            </Col>
+                        ))}
+                    </Row>
+                ) : (
+                    <Empty
+                        description="Chưa có môn giảng dạy"
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    />
+                )}
+            </ProCard>
+        );
     };
 
     const renderTeacherTeachingInfo = () => {
@@ -273,6 +296,7 @@ const UserDetailPageDemo = () => {
                 render: (_, record) => (
                     <Space direction="vertical" size={0}>
                         <Text strong>{record.subjectName}</Text>
+
                         <Text type="secondary">
                             {record.subjectCode} • {record.credit} tín chỉ
                         </Text>
@@ -304,22 +328,15 @@ const UserDetailPageDemo = () => {
             },
         ];
 
-        if (!teachingCourses.length) {
-            return (
-                <Empty
-                    description="Giảng viên chưa có môn giảng dạy"
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                />
-            );
-        }
-
         return (
             <Space direction="vertical" size={16} style={{ width: "100%" }}>
+                {renderTeacherSubjectsCard()}
+
                 <Row gutter={[16, 16]}>
                     <Col xs={24} md={8}>
                         <ProCard bordered>
                             <Statistic
-                                title="Tổng môn"
+                                title="Tổng lớp học phần"
                                 value={teachingCourses.length}
                                 prefix={<BookOutlined />}
                             />
@@ -348,12 +365,15 @@ const UserDetailPageDemo = () => {
                     </Col>
                 </Row>
 
-                <ProCard title="Danh sách môn giảng dạy" bordered>
+                <ProCard title="Danh sách lớp học phần đã phụ trách" bordered>
                     <Table
                         rowKey="id"
                         columns={columns}
                         dataSource={teachingCourses}
                         pagination={{ pageSize: 5 }}
+                        locale={{
+                            emptyText: "Giảng viên chưa phụ trách lớp học phần",
+                        }}
                     />
                 </ProCard>
             </Space>
@@ -369,6 +389,7 @@ const UserDetailPageDemo = () => {
                 render: (_, record) => (
                     <Space direction="vertical" size={0}>
                         <Text strong>{record.subjectName}</Text>
+
                         <Text type="secondary">
                             {record.subjectCode} • {record.credit} tín chỉ
                         </Text>
@@ -475,6 +496,9 @@ const UserDetailPageDemo = () => {
                         columns={columns}
                         dataSource={grades}
                         pagination={{ pageSize: 5 }}
+                        locale={{
+                            emptyText: "Chưa có dữ liệu điểm",
+                        }}
                     />
                 </ProCard>
             </Space>
@@ -532,6 +556,7 @@ const UserDetailPageDemo = () => {
 
                                     <Space size={8} wrap>
                                         {roleTag(role)}
+
                                         {data.isActive ? (
                                             <Tag color="green">
                                                 Đang hoạt động
@@ -710,50 +735,6 @@ const UserDetailPageDemo = () => {
                             </div>
                         </Space>
                     </Col>
-                    {/* 
-                    <Col>
-                        <Space wrap>
-                            <Button
-                                icon={<EditOutlined />}
-                                type="primary"
-                                onClick={() =>
-                                    navigate(`/users/${data.id}/edit`)
-                                }
-                            >
-                                Sửa
-                            </Button>
-
-                            <Button
-                                loading={actionLoading}
-                                icon={
-                                    data.isActive ? (
-                                        <LockOutlined />
-                                    ) : (
-                                        <UnlockOutlined />
-                                    )
-                                }
-                                onClick={onToggleActive}
-                            >
-                                {data.isActive ? "Khoá" : "Mở khoá"}
-                            </Button>
-
-                            <Popconfirm
-                                title="Xoá người dùng"
-                                description="Bạn có chắc chắn muốn xoá người dùng này?"
-                                okText="Xoá"
-                                cancelText="Huỷ"
-                                onConfirm={onDelete}
-                            >
-                                <Button
-                                    danger
-                                    loading={actionLoading}
-                                    icon={<DeleteOutlined />}
-                                >
-                                    Xoá
-                                </Button>
-                            </Popconfirm>
-                        </Space>
-                    </Col> */}
                 </Row>
 
                 <Divider style={{ margin: "16px 0" }} />

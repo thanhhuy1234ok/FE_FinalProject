@@ -85,10 +85,10 @@ const UserModal = (props: IProps) => {
 
             // teacher thì gán thêm môn
             if (roleId === 2 && subjectIds.length > 0) {
-                const teacherId = res.data.id;
-
+                const teacherId = res.data?.teacher?.id;
+                console.log(res.data);
                 const payloadSub = {
-                    teacherId,
+                    teacherId: Number(teacherId),
                     subjectIds,
                 };
 

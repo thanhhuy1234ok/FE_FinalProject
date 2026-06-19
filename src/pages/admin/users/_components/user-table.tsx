@@ -206,19 +206,31 @@ const UserTable = () => {
                 ),
             },
             {
-                title: "Bộ môn",
-                key: "deparment",
+                title: "Bộ môn / Chuyên ngành",
+                key: "department",
                 hideInSearch: true,
-                dataIndex: "deparment",
                 align: "center",
-                width: isMobile ? 110 : 150,
+                width: isMobile ? 110 : 180,
                 fixed: isTablet ? undefined : "right",
-                // render: () => <Text type="secondary">{re}</Text>,
-                render: (_, record) => (
-                    <Text type="secondary">
-                        {record.teacher?.department?.name ?? "-"}
-                    </Text>
-                ),
+                render: (_, record) => {
+                    if (record.role?.name === "TEACHER") {
+                        return (
+                            <Text type="secondary">
+                                {record.teacher?.department?.name ?? "-"}
+                            </Text>
+                        );
+                    }
+
+                    if (record.role?.name === "STUDENT") {
+                        return (
+                            <Text type="secondary">
+                                {record.student?.major?.name ?? "-"}
+                            </Text>
+                        );
+                    }
+
+                    return <Text type="secondary">-</Text>;
+                },
             },
             {
                 title: "CreatedAt",
@@ -241,20 +253,20 @@ const UserTable = () => {
                 fixed: isTablet ? undefined : "right",
                 render: (_value, entity) => {
                     const menuItems = [
-                        {
-                            key: "edit",
-                            label: (
-                                <Space size={8}>
-                                    <EditOutlined />
-                                    Chỉnh sửa
-                                </Space>
-                            ),
-                            disabled: !entity.isActive,
-                            onClick: () => {
-                                setDataUpdate(entity);
-                                setOpenModal(true);
-                            },
-                        },
+                        // {
+                        //     key: "edit",
+                        //     label: (
+                        //         <Space size={8}>
+                        //             <EditOutlined />
+                        //             Chỉnh sửa
+                        //         </Space>
+                        //     ),
+                        //     disabled: !entity.isActive,
+                        //     onClick: () => {
+                        //         setDataUpdate(entity);
+                        //         setOpenModal(true);
+                        //     },
+                        // },
                         {
                             key: "detail",
                             label: (
