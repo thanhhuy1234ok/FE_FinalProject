@@ -46,7 +46,7 @@ interface IAdminClass {
     code: string;
     name: string;
     capacity?: number;
-    isActive?: boolean;
+    status: AdminClassStatus;
     yearOfAdmission?: {
         id: number;
         year?: number | string;
@@ -71,7 +71,7 @@ interface IMajorDetail {
     code: string;
     name: string;
     description?: string;
-    isActive?: boolean;
+    status: AdminClassStatus;
     department_id?: number;
     department?: IDepartment;
     createdAt?: string;
@@ -79,13 +79,26 @@ interface IMajorDetail {
     adminClasses?: IAdminClass[];
     curriculums?: ICurriculum[];
 }
+export enum AdminClassStatus {
+    PENDING = "PENDING",
+    STUDYING = "STUDYING",
+    GRADUATED = "GRADUATED",
+}
 
-const renderStatusTag = (isActive?: boolean) => {
-    return isActive ? (
-        <Tag color="success">Hoạt động</Tag>
-    ) : (
-        <Tag color="default">Tạm khóa</Tag>
-    );
+export const renderStatusTag = (status?: any) => {
+    switch (status) {
+        case AdminClassStatus.PENDING:
+            return <Tag color="warning">Chờ mở lớp</Tag>;
+
+        case AdminClassStatus.STUDYING:
+            return <Tag color="success">Đang học</Tag>;
+
+        case AdminClassStatus.GRADUATED:
+            return <Tag color="blue">Đã tốt nghiệp</Tag>;
+
+        default:
+            return <Tag>Mặc định</Tag>;
+    }
 };
 
 const renderCurriculumStatus = (status: any) => {
@@ -221,7 +234,7 @@ const MajorDetailPage = () => {
                         <Card size="small" bordered>
                             <Space direction="vertical" size={4}>
                                 <Text type="secondary">Trạng thái</Text>
-                                {renderStatusTag(detail.isActive)}
+                                {renderStatusTag(detail.status)}
                             </Space>
                         </Card>
                     </Col>
@@ -271,7 +284,7 @@ const MajorDetailPage = () => {
                                         {detail.code}
                                     </Descriptions.Item>
                                     <Descriptions.Item label="Trạng thái">
-                                        {renderStatusTag(detail.isActive)}
+                                        {renderStatusTag(detail.status)}
                                     </Descriptions.Item>
                                     <Descriptions.Item label="Bộ môn">
                                         {detail.department?.name || "--"}
@@ -332,7 +345,7 @@ const MajorDetailPage = () => {
                                                             size="small"
                                                             title={item.name}
                                                             extra={renderStatusTag(
-                                                                item.isActive,
+                                                                item.status,
                                                             )}
                                                         >
                                                             <Descriptions
