@@ -197,7 +197,7 @@ const ScheduleCalendar = ({ reloadKey }: ScheduleCalendarProps) => {
 
             const query = buildQuery({
                 current: 1,
-                pageSize: 1000,
+                pageSize: 10000,
             });
 
             const res = await getSchedulesAPI(query);
