@@ -445,7 +445,7 @@ const UserDetailPageDemo = () => {
                     <Col xs={24} md={6}>
                         <ProCard bordered>
                             <Statistic
-                                title="Tín chỉ đã học"
+                                title="Tổng tín chỉ"
                                 value={learningOverview?.totalCredits || 0}
                             />
                         </ProCard>
