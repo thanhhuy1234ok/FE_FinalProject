@@ -147,11 +147,11 @@ const AdminHeader: React.FC<Props> = ({
     };
 
     const itemsDropdown: MenuProps["items"] = [
-        {
-            key: "account",
-            icon: <UserOutlined />,
-            label: "Quản lý tài khoản",
-        },
+        // {
+        //     key: "account",
+        //     icon: <UserOutlined />,
+        //     label: "Quản lý tài khoản",
+        // },
         {
             key: "logout",
             icon: <LogoutOutlined />,
