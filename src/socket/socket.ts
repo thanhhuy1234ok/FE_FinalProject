@@ -1,7 +1,7 @@
 // src/socket/socket.ts
 import { io } from "socket.io-client";
 
-export const socket = io("http://localhost:8080", {
+export const socket = io("https://school-ag.xyz:8080", {
     autoConnect: false,
     transports: ["websocket"],
     reconnection: true,
