@@ -1164,10 +1164,6 @@ const TeacherLessonDetailPage = () => {
                             <Text strong>Điều kiện điểm danh:</Text>
 
                             <Text type="secondary">
-                                • Sinh viên phải cùng wifi với giáo viên
-                            </Text>
-
-                            <Text type="secondary">
                                 • Sinh viên phải ở gần vị trí tạo QR
                             </Text>
 
